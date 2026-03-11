@@ -1,0 +1,66 @@
+#root,
+.app-container {
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+}
+
+/*  Left Tab  */
+.left-tab {
+  flex: 0 0 50%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 1.5rem;
+  background: linear-gradient(135deg, #0f0f11 0%, #08080a 100%);
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 16rem 2rem 5rem;
+  transition: background-color 0.2s;
+  user-select: none;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.left-tab:active {
+  background: linear-gradient(135deg, #252529 0%, #1a1a1f 100%);
+}
+
+/* Right Tab (two columns) */
+.right-tab {
+  flex: 0 0 50%;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  background: #050505;
+  padding-top: 1.5rem;
+  overflow: hidden;
+  height: 100%;
+}
+
+/* Controls column — left ~60% of right-tab */
+.controls-col {
+  flex: 0 0 60%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16rem 1.5rem 3rem 2rem; /* top offset matches title height */
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+  overflow-y: auto;
+  font-size: 1.05em;
+  gap: 0.5rem;
+}
+
+/* Presets column — right ~40% of right-tab */
+.presets-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 0.5rem 1.5rem 0 1.5rem;
+  overflow-y: auto;
+  gap: 1rem;
+  height: 100%;
+  min-height: 0;
+}

@@ -1,0 +1,44 @@
+/* Title */
+.title-ghost,
+.title-mitts {
+  position: absolute;
+  top: 2rem;
+  font-size: clamp(4rem, 12vw, 10.5rem);
+  font-weight: 800;
+  letter-spacing: -4px;
+  line-height: 1;
+  z-index: 10;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.title-ghost {
+  right: 50%;
+  color: #aaa;
+  padding-right: 0.05em;
+}
+
+.title-mitts {
+  left: 50%;
+  color: #333;
+  padding-left: 0.05em;
+}
+
+/*  Look Straight  */
+.look-straight {
+  font-size: clamp(0.65rem, 1.5vw, 1rem);
+  font-weight: 700;
+  letter-spacing: 3px;
+  color: #333;
+  text-transform: uppercase;
+  margin-top: auto;
+}
+
+/*  Idle  */
+.idle-text {
+  font-size: clamp(1.2rem, 3vw, 2rem);
+  color: #444;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}

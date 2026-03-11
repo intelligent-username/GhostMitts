@@ -1,0 +1,27 @@
+/*  Left Display  */
+.time-display {
+  font-size: clamp(4rem, 12vw, 11rem);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -2px;
+  color: #fff;
+}
+
+.combo-status {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.combo-small {
+  font-size: clamp(1.2rem, 3vw, 1.8rem);
+  color: #aaa;
+  font-weight: 500;
+}
+
+.combo-large {
+  font-size: clamp(3rem, 7vw, 5.5rem);
+  font-weight: 800;
+  color: #fff;
+}
