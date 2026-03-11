@@ -1,0 +1,93 @@
+interface ControlsColumnProps {
+  mode: "time" | "combos";
+  setMode: (mode: "time" | "combos") => void;
+  timeInputMin: string;
+  setTimeInputMin: (val: string) => void;
+  timeInputSec: string;
+  setTimeInputSec: (val: string) => void;
+  comboInput: string;
+  setComboInput: (val: string) => void;
+  onStart: () => void;
+  onPause: () => void;
+  onReset: () => void;
+}
+
+export function ControlsColumn({
+  mode,
+  setMode,
+  timeInputMin,
+  setTimeInputMin,
+  timeInputSec,
+  setTimeInputSec,
+  comboInput,
+  setComboInput,
+  onStart,
+  onPause,
+  onReset,
+}: ControlsColumnProps) {
+  return (
+    <div className="controls-col">
+      <div className="toggle-container">
+        <button
+          className={`toggle-btn ${mode === "time" ? "active" : ""}`}
+          onClick={() => setMode("time")}
+        >
+          Time
+        </button>
+        <button
+          className={`toggle-btn ${mode === "combos" ? "active" : ""}`}
+          onClick={() => setMode("combos")}
+        >
+          Combos
+        </button>
+      </div>
+
+      <div className="controls">
+        {mode === "time" ? (
+          <div className="time-inputs">
+            <div className="input-group">
+              <span className="input-label">Min</span>
+              <input
+                type="number"
+                className="styled-input"
+                value={timeInputMin}
+                onChange={e => setTimeInputMin(e.target.value)}
+                min="0"
+              />
+            </div>
+            <div className="input-group">
+              <span className="input-label">Sec</span>
+              <input
+                type="number"
+                className="styled-input"
+                value={timeInputSec}
+                onChange={e => setTimeInputSec(e.target.value)}
+                min="0"
+                max="59"
+              />
+            </div>
+          </div>
+        ) : (
+          <div className="input-group">
+            <span className="input-label">Combos</span>
+            <input
+              type="number"
+              className="styled-input"
+              value={comboInput}
+              onChange={e => setComboInput(e.target.value)}
+              min="1"
+            />
+          </div>
+        )}
+
+        <div className="button-group">
+          <button className="start-btn" onClick={onStart}>START</button>
+          <button className="reset-btn" onClick={onReset}>RESET</button>
+          {mode === "time" && (
+            <button className="pause-btn" onClick={onPause}>PAUSE</button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -25,3 +25,31 @@
   font-weight: 800;
   color: #fff;
 }
+
+.display-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.practice-totals {
+  font-size: 1.1rem;
+  color: #888;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-bottom: 0.5rem;
+}
+
+.account-prompt {
+  position: absolute;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #666;
+  font-size: 0.85rem;
+  letter-spacing: 0.5px;
+  pointer-events: none;
+  z-index: 100;
+  text-align: center;
+}
