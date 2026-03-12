@@ -28,7 +28,7 @@ export function App() {
   const [timeInputMin, setTimeInputMin] = useState<string>("3");
   const [timeInputSec, setTimeInputSec] = useState<string>("0");
   const [comboInput, setComboInput]     = useState<string>("10");
-  const [speed, setSpeed]               = useState<number>(1000);
+  const [speed, setSpeed]               = useState<number>(3000);
 
   // Timer / combo run state
   const [isTimerRunning, setIsTimerRunning] = useState(false);
@@ -139,6 +139,13 @@ export function App() {
 
       const limit = totalCombosRef.current;
       if (limit > 0 && combosCompletedRef.current >= limit) {
+        if (mode === "combos") {
+          setIsCombosActive(false);
+          // Calculate final elapsed time
+          const elapsed = Math.round((Date.now() - sessionStartMs.current) / 1000);
+          setTotalPracticeSeconds(p => p + Math.max(0, elapsed));
+          setTotalPracticeCombos(p => p + limit);
+        }
         return;
       }
 
@@ -155,16 +162,12 @@ export function App() {
       setCombosCompleted(prev => {
         const next = prev + 1;
         combosCompletedRef.current = next;
-        if (limit > 0 && next >= limit) {
-          if (mode === "time") {
-            setTotalPracticeCombos(p => p + next);
-          } else {
-            setIsCombosActive(false);
-            const elapsed = Math.round((Date.now() - sessionStartMs.current) / 1000);
-            setTotalPracticeSeconds(p => p + elapsed);
-            setTotalPracticeCombos(p => p + limit);
-          }
+        
+        // If we hit the limit in Time mode, we finalize the combo total immediately
+        if (mode === "time" && limit > 0 && next >= limit) {
+          setTotalPracticeCombos(p => p + next);
         }
+        
         return next;
       });
     };
@@ -322,9 +325,6 @@ export function App() {
           maxSlots={MAX_SLOTS}
         />
 
-        <div className="account-prompt">
-          Create an account to save presets and practice sessions
-        </div>
       </div>
     </div>
   );

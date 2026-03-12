@@ -51,6 +51,7 @@
   overflow-y: auto;
   font-size: 1.05em;
   gap: 0.5rem;
+  position: relative;
 }
 
 /* Presets column, right ~40% of right-tab */

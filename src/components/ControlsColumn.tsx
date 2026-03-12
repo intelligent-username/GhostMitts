@@ -73,7 +73,7 @@ export function ControlsColumn({
           </div>
         ) : (
           <div className="input-group">
-            <span className="input-label">Combos</span>
+            <span className="input-label">How Many?</span>
             <input
               type="number"
               className="styled-input"
@@ -101,6 +101,10 @@ export function ControlsColumn({
             </button>
           )}
         </div>
+      </div>
+      
+      <div className="account-prompt">
+        Create an account to save presets and practice sessions
       </div>
     </div>
   );

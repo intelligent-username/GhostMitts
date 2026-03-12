@@ -55,6 +55,12 @@
   box-shadow: 0 0 5px rgba(76, 175, 80, 0.2);
 }
 
+.speed-slider-wrapper {
+  position: relative;
+  width: 100%;
+  padding: 10px 0 45px;
+}
+
 .speed-slider {
   -webkit-appearance: none;
   appearance: none;
@@ -63,6 +69,34 @@
   background: #1a1a1a;
   border-radius: 2px;
   outline: none;
+  position: relative;
+  z-index: 2;
+}
+
+.speed-marker {
+  position: absolute;
+  top: 38px;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.speed-marker-chevron {
+  color: #666;
+  margin-bottom: 2px;
+  opacity: 0.8;
+}
+
+.speed-marker-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
 }
 
 .speed-slider::-webkit-slider-thumb {

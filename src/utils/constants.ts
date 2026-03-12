@@ -31,8 +31,7 @@ export const NUMBER_AUDIO_MAP: Record<number, string> = {
   5: "n05_FIVE.ogg", 6: "n06_SIX.ogg", 7: "n07_SEVEN.ogg", 8: "n08_EIGHT.ogg",
   9: "n09_NINE.ogg", 10: "n10_TEN.ogg", 11: "n11_ELEVEN.ogg", 12: "n12_TWELVE.ogg",
   13: "n13_THIRTEEN.ogg", 14: "n14_FOURTEEN.ogg", 15: "n15_FIFTEEN.ogg",
-  16: "n16_SIXTEEN.ogg", 17: "n17_SEVENTEEN.ogg", 18: "n18_EIGHTEEN.ogg",
-  19: "n19_NINETEEN.ogg", 20: "n20_TWENTY.ogg"
+  16: "n16_SIXTEEN.ogg"
 };
 
 export const MOVE_AUDIO_MAP: Record<string, string> = {

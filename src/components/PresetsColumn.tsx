@@ -58,15 +58,34 @@ export function PresetsColumn({
             </span>
           </div>
         </div>
-        <input
-          type="range"
-          className="speed-slider"
-          min="500"
-          max="15000"
-          step="100"
-          value={speed}
-          onChange={(e) => setSpeed(Number(e.target.value))}
-        />
+        <div className="speed-slider-wrapper">
+          <input
+            type="range"
+            className="speed-slider"
+            min="500"
+            max="15000"
+            step="100"
+            value={speed}
+            onChange={(e) => setSpeed(Number(e.target.value))}
+          />
+          <div className="speed-marker" style={{ left: `${((3000 - 500) / (15000 - 500)) * 100}%` }}>
+            <svg
+              className="speed-marker-chevron"
+              xmlns="http://www.w3.org/2000/svg"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polyline points="18 15 12 9 6 15" />
+            </svg>
+            <span className="speed-marker-label">Recommended</span>
+          </div>
+        </div>
       </div>
 
       <div className="presets-header">

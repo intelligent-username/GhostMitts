@@ -4,26 +4,43 @@ A little coach to tell you what combinations to throw.
 
 ## Running Locally
 
-To install dependencies:
+### Front end
+
+Install dependencies:
 
 ```bash
-bun install
+npm install
 ```
 
-To start a development server:
+To start a development server (recommended):
 
 ```bash
-bun dev
+npm run dev
 ```
 
-To run for production:
+Or build first:
 
 ```bash
-bun start
+npm run build
+```
+
+Then run for production:
+
+```bash
+npm run start
 ```
 
 This project was created using `bun init` in bun v1.3.6. [Bun](https://bun.com) is a fast all-in-one JavaScript runtime.
 
 ### Voice Generation
 
-If you want to generate the audio files yourself, run `gen.py` (`voicegen` folder), make sure to install the edgetts library (run pip install -r requirements.txt in the voicegen folder) so the script can run.
+If you want to generate the audio files yourself:
+
+```bash
+cd voicegen
+python gen.py
+```
+
+Make sure to install the edge-tts and other libraries (`run pip install -r requirements.txt`) before running the Python script.
+
+

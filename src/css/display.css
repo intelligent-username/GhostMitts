@@ -78,15 +78,17 @@
 .account-prompt {
   position: absolute;
   bottom: 0.5rem;
-  left: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
   color: #555;
   font-size: 0.75rem;
   font-weight: 500;
   letter-spacing: 0.5px;
   pointer-events: none;
   z-index: 100;
-  text-align: left;
+  text-align: center;
   opacity: 0.8;
+  white-space: nowrap;
 }
 
 .bottom-toggles {

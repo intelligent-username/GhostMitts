@@ -10,3 +10,11 @@ body {
   color: #ededed;
   overflow: hidden;
 }
+
+h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #4CAF50;
+  text-transform: uppercase;
+}
