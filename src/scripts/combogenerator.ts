@@ -17,7 +17,7 @@
  *      weight(k) = bias ^ (k - 1)
  */
 
-// Names that count as "kicks" — reversed parity
+// Names that count as "kicks": (reversed parity)
 const KICK_NAMES = new Set([
   "LEAD KNEE", "REAR KNEE",
   "LEAD KICK", "REAR KICK", "BODY KICK", "ROUNDHOUSE KICK",
@@ -107,7 +107,27 @@ export function generateCombo(opts: ComboOptions): number[] {
 
     if (candidates.length === 0) break;
 
-    const weighted = candidates.map(k => ({ value: k, weight: weightOf(k) }));
+    // Count how many times '1' was rolled twice in a row so far
+    let doubleJabCount = 0;
+    for (let i = 1; i < combo.length; i++) {
+      if (combo[i] === 1 && combo[i - 1] === 1) {
+        doubleJabCount++;
+      }
+    }
+
+    const weighted = candidates.map(k => {
+      let w = weightOf(k);
+      if (k === 1) {
+        // Add 1 to doubleJabCount if this candidate '1' would create another back-to-back '1'
+        const currentWouldBeDouble = last === 1 ? 1 : 0;
+        const totalDoubles = doubleJabCount + currentWouldBeDouble;
+        if (totalDoubles > 0) {
+          w *= Math.pow(0.5, totalDoubles);
+        }
+      }
+      return { value: k, weight: w };
+    });
+
     combo.push(weightedPick(weighted));
   }
 

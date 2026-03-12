@@ -11,8 +11,9 @@ import { LeftDisplay } from "./components/LeftDisplay";
 import { ControlsColumn } from "./components/ControlsColumn";
 import { PresetsColumn } from "./components/PresetsColumn";
 import type { Move, PresetKey } from "./types";
-import { DEFAULT_PRESETS, MAX_SLOTS, NUMBER_WORDS, movesForSlot } from "./utils/constants";
+import { DEFAULT_PRESETS, MAX_SLOTS, movesForSlot } from "./utils/constants";
 import { loadTotalSeconds, loadTotalCombos, saveTotalSeconds, saveTotalCombos } from "./utils/storage";
+import { useAudioSequencer } from "./hooks/useAudioSequencer";
 
 export function App() {
   const [mode, setMode] = useState<"time" | "combos">("time");
@@ -105,11 +106,14 @@ export function App() {
   );
 
   // ── audio sequencer & multi-processor ────────────────────────────────────
-  
+  const { playComboAudio, stopAudio } = useAudioSequencer({
+    useVoiceRef,
+    showFullNameRef,
+    currentMoves,
+  });
+
   // We maintain a pre-generated queue of combos
   const comboQueueRef = useRef<number[][]>([]);
-  // We also keep track of the currently running audio context if we speed it up
-  const activeAudioRef = useRef<HTMLAudioElement | null>(null);
 
   // Fill up the queue so it is always 10 combos deep ahead of time
   const replenishQueue = useCallback(() => {
@@ -119,55 +123,13 @@ export function App() {
     }
   }, [getCombo]);
 
-  const playComboAudio = useCallback((keys: number[], timeAllowedMs: number) => {
-    if (!useVoiceRef.current) return;
-
-    // Fast playback requires sequential rapid firing or native Web Audio API. 
-    // Here we use overlapping rapid sequential HTML5 audio with pitch/speed correction.
-    
-    // We aim to finish playing all moves in AT MOST a fraction of speed.
-    // e.g., speed / keys.length is the max time per move.
-    const maxTimePerMove = (timeAllowedMs * 0.70) / keys.length; 
-    // Calculate a playback rate that heavily compresses the clips (e.g. 1.5x up to 3.0x speed)
-    // Most voicegen tracks are ~0.8s long
-    const idealPlaybackRate = Math.max(1.2, Math.min(3.0, 800 / maxTimePerMove));
-
-    const audioQueue = keys.map(k => {
-      const fileKey = String(k).padStart(2, '0');
-      if (showFullNameRef.current) {
-        const moveName = currentMoves.find(m => m.key === k)?.name ?? String(k);
-        const formattedName = moveName.replace(/ /g, "_").toUpperCase();
-        return `/voicegen/en-US-GuyNeural/n${fileKey}_${formattedName}.mp3`;
-      } else {
-        const numberWord = NUMBER_WORDS[k] ?? String(k);
-        return `/voicegen/en-US-GuyNeural/n${fileKey}_${numberWord}.mp3`;
-      }
-    });
-
-    const playNext = (index: number) => {
-      if (index >= audioQueue.length) return;
-      
-      const audio = new Audio(audioQueue[index]);
-      activeAudioRef.current = audio;
-      
-      // Force it to play much faster so the whole sequence fits the speed allocation
-      audio.playbackRate = idealPlaybackRate;
-      audio.preservesPitch = true; // supported in modern chromium/safari
-
-      audio.onended = () => playNext(index + 1);
-      audio.play().catch(() => {});
-    };
-
-    playNext(0);
-  }, [currentMoves]);
-
   // ── combo emitter (fires at `speed` ms interval) ──────────────────────────
   useEffect(() => {
     const isSessionActive = mode === "time" ? isTimerRunning : isCombosActive;
     if (!isSessionActive) {
       // Clear queues and stop sound if paused
       comboQueueRef.current = [];
-      if (activeAudioRef.current) activeAudioRef.current.pause();
+      stopAudio();
       return;
     }
 
@@ -177,12 +139,6 @@ export function App() {
 
       const limit = totalCombosRef.current;
       if (limit > 0 && combosCompletedRef.current >= limit) {
-        if (mode === "combos") {
-          setIsCombosActive(false);
-          const elapsed = Math.round((Date.now() - sessionStartMs.current) / 1000);
-          setTotalPracticeSeconds(p => p + elapsed);
-          setTotalPracticeCombos(p => p + limit);
-        }
         return;
       }
 
@@ -192,7 +148,8 @@ export function App() {
       if (!keys) return;
 
       setCurrentCombo(comboToString(keys));
-      // Hand control to the audio multicaster
+      // Stop any still-playing audio from the previous interval before starting the new one
+      stopAudio();
       playComboAudio(keys, speed);
 
       setCombosCompleted(prev => {
@@ -365,10 +322,9 @@ export function App() {
           maxSlots={MAX_SLOTS}
         />
 
-      </div>
-
-      <div className="account-prompt">
-        Create an account to save presets and practice sessions
+        <div className="account-prompt">
+          Create an account to save presets and practice sessions
+        </div>
       </div>
     </div>
   );

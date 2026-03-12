@@ -11,7 +11,10 @@ async def generate_countdown():
     for i, word in enumerate(WORDS, start=1):
         filename = f"n{i:02d}_{word.replace(' ', '_')}"
         print(f"Generating aggressive: {word}...")
-        file_path = os.path.join(VOICE_ID, f"{filename}.mp3")
+        import subprocess
+
+        file_path_mp3 = os.path.join(VOICE_ID, f"{filename}.mp3")
+        file_path_ogg = os.path.join(VOICE_ID, f"{filename}.ogg")
         
         communicate = edge_tts.Communicate(
             word, 
@@ -20,9 +23,22 @@ async def generate_countdown():
             pitch="-20Hz",
             volume="+130%"
         )
-        await communicate.save(file_path)
+        await communicate.save(file_path_mp3)
         
-        print(f"Saved {file_path}")
+        # Strip silence and convert to Opus (.ogg) using ffmpeg
+        cmd = [
+            "ffmpeg", "-y", "-i", file_path_mp3,
+            "-af", "silenceremove=start_periods=1:start_threshold=-50dB,areverse,silenceremove=start_periods=1:start_threshold=-50dB,areverse",
+            "-c:a", "libopus", "-b:a", "32k",
+            file_path_ogg
+        ]
+        subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        
+        # Clean up the bloated MP3 file
+        if os.path.exists(file_path_mp3):
+            os.remove(file_path_mp3)
+            
+        print(f"Saved {file_path_ogg}")
 
 if __name__ == "__main__":
     asyncio.run(generate_countdown())
