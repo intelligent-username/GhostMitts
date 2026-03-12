@@ -2,7 +2,6 @@ import os
 import asyncio
 import edge_tts
 
-# Steffan is typically a bit more punchy/gritty than Christopher
 VOICE_ID = "en-US-GuyNeural" 
 WORDS = ["ONE", "TWO", "THREE", "FOUR", "FIVE", "SIX", "SEVEN", "EIGHT", "NINE", "TEN", "ELEVEN", "TWELVE", "THIRTEEN", "FOURTEEN", "FIFTEEN", "SIXTEEN", "JAB", "CROSS", "FRONT HOOK", "REAR HOOK", "FRONT UPPERCUT", "REAR UPPERCUT", "OVERHAND LEFT", "OVERHAND RIGHT", "LEAD KNEE", "REAR KNEE", "LEAD KICK", "REAR KICK", "BODY KICK", "ROUNDHOUSE KICK", "TEEP", "LOW KICK", "HEAD KICK", "CHECK KICK", "BLOCK", "PARRY LEFT", "PARRY RIGHT", "SLIP LEFT", "SLIP RIGHT"]
 

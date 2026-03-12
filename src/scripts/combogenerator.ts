@@ -9,6 +9,7 @@
  *  • Kicks REVERSE the rule: odd key kick → next must be odd,
  *    even key kick → next must be even (same-side follow-up).
  *  • Exception: key 1 (Jab) may appear back-to-back.
+ *  • First move is ALWAYS an odd-keyed lead punch (never a kick).
  *
  * Bias
  * ────
@@ -74,7 +75,12 @@ export function generateCombo(opts: ComboOptions): number[] {
     let candidates: number[];
 
     if (last === null) {
-      candidates = allKeys;
+      // First move: must be an odd-keyed lead PUNCH (no kicks)
+      candidates = allKeys.filter(k => k % 2 === 1 && !isKick(moves, k));
+      // Fallback: any odd key if the preset has no odd-keyed punches
+      if (candidates.length === 0) candidates = allKeys.filter(k => k % 2 === 1);
+      // Last resort: anything
+      if (candidates.length === 0) candidates = allKeys;
     } else {
       const lastIsOdd = last % 2 === 1;
       const lastIsKick = isKick(moves, last);
@@ -83,7 +89,7 @@ export function generateCombo(opts: ComboOptions): number[] {
         // Jab exception: can double-jab OR go rear (even)
         candidates = allKeys.filter(k => k === 1 || k % 2 === 0);
       } else if (lastIsKick) {
-        // KICK: reversed parity — same parity follows
+        // KICK: reversed parity same parity follows
         if (lastIsOdd) {
           candidates = allKeys.filter(k => k % 2 === 1);
         } else {

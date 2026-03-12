@@ -39,7 +39,7 @@
   height: 100%;
 }
 
-/* Controls column — left ~60% of right-tab */
+/* Controls column left ~60% of right-tab */
 .controls-col {
   flex: 0 0 60%;
   display: flex;
@@ -52,7 +52,7 @@
   gap: 0.5rem;
 }
 
-/* Presets column — right ~40% of right-tab */
+/* Presets column, right ~40% of right-tab */
 .presets-col {
   flex: 1;
   display: flex;

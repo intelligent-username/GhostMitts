@@ -1,0 +1,136 @@
+/*  Toggle  */
+.toggle-container {
+  display: flex;
+  align-items: center;
+  background-color: #1a1a1a;
+  border-radius: 999px;
+  padding: 4px;
+  margin-bottom: 2.5rem;
+  width: 100%;
+  max-width: 280px;
+  flex-shrink: 0;
+}
+
+.toggle-btn {
+  flex: 1;
+  padding: 0.6rem 1rem;
+  border-radius: 999px;
+  border: none;
+  background: transparent;
+  color: #666;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.toggle-btn.active {
+  background-color: #ededed;
+  color: #121214;
+  box-shadow: 0 2px 8px rgba(255, 255, 255, 0.1);
+}
+
+/*  Controls (Inputs & Buttons) */
+.controls {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 1.8rem;
+  width: 100%;
+  max-width: 280px;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  gap: 0.5rem;
+}
+
+.input-label {
+  font-size: 0.8rem;
+  color: #666;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.styled-input {
+  width: 100%;
+  padding: 1.1rem;
+  border-radius: 12px;
+  border: 1px solid #333;
+  background: #111;
+  color: #fff;
+  font-size: 1.8rem;
+  text-align: center;
+  outline: none;
+  transition: border-color 0.2s;
+  font-weight: 700;
+}
+
+.styled-input:focus {
+  border-color: #666;
+}
+
+.styled-input::-webkit-outer-spin-button,
+.styled-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.styled-input[type=number] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.time-inputs {
+  display: flex;
+  width: 100%;
+  gap: 1rem;
+}
+
+.button-group {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.start-btn,
+.reset-btn,
+.pause-btn {
+  width: 100%;
+  padding: 1.1rem;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.1s, background-color 0.15s, opacity 0.15s;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.start-btn {
+  border: none;
+  background-color: #4CAF50;
+  color: #fff;
+}
+.start-btn:hover { background-color: #45a049; }
+.start-btn:active { transform: scale(0.97); }
+
+.reset-btn {
+  border: 1px solid #e53935;
+  background-color: transparent;
+  color: #e53935;
+}
+.reset-btn:hover { background-color: rgba(229, 57, 53, 0.1); }
+.reset-btn:active { transform: scale(0.97); }
+
+.pause-btn {
+  border: 1px solid #ff9800;
+  background-color: transparent;
+  color: #ff9800;
+}
+.pause-btn:hover { background-color: rgba(255, 152, 0, 0.1); }
+.pause-btn:active { transform: scale(0.97); }

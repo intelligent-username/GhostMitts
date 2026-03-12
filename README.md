@@ -26,4 +26,4 @@ This project was created using `bun init` in bun v1.3.6. [Bun](https://bun.com) 
 
 ### Voice Generation
 
-If you want to generate the audio files yourself, use the `voicegen` folder, make sure to instlal the edgetts library (run pip install -r requirements.txt in the voicegen folder)
+If you want to generate the audio files yourself, run `gen.py` (`voicegen` folder), make sure to install the edgetts library (run pip install -r requirements.txt in the voicegen folder) so the script can run.

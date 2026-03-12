@@ -3,6 +3,12 @@ import index from "./index.html";
 
 const server = serve({
   routes: {
+    // Serve static audio files
+    "/voicegen/*": req => {
+      const path = new URL(req.url).pathname;
+      return new Response(Bun.file("." + path));
+    },
+
     // Serve index.html for all unmatched routes.
     "/*": index,
 

@@ -49,8 +49,8 @@ export function PresetsColumn({
                 }
               }}
               onBlur={() => {
-                if (speed < 200) setSpeed(200);
-                if (speed > 5000) setSpeed(5000);
+                if (speed < 500) setSpeed(500);
+                if (speed > 15000) setSpeed(15000);
               }}
             />
             <span className="speed-value">
@@ -61,8 +61,8 @@ export function PresetsColumn({
         <input
           type="range"
           className="speed-slider"
-          min="200"
-          max="5000"
+          min="500"
+          max="15000"
           step="100"
           value={speed}
           onChange={(e) => setSpeed(Number(e.target.value))}
@@ -123,7 +123,7 @@ export function PresetsColumn({
           </button>
         )}
         {currentMoves.length >= maxSlots && (
-          <div className="punch-cap-notice">{maxSlots}/{maxSlots} — at max</div>
+          <div className="punch-cap-notice">{maxSlots}/{maxSlots} ——— at max</div>
         )}
       </div>
     </div>

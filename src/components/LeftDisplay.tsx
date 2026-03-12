@@ -8,6 +8,11 @@ interface LeftDisplayProps {
   onTabClick: () => void;
   totalPracticeSeconds: number;
   totalPracticeCombos: number;
+  currentCombo: string;
+  showFullName: boolean;
+  setShowFullName: (val: boolean) => void;
+  useVoice: boolean;
+  setUseVoice: (val: boolean) => void;
 }
 
 export function LeftDisplay({
@@ -20,6 +25,11 @@ export function LeftDisplay({
   onTabClick,
   totalPracticeSeconds,
   totalPracticeCombos,
+  currentCombo,
+  showFullName,
+  setShowFullName,
+  useVoice,
+  setUseVoice,
 }: LeftDisplayProps) {
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
@@ -27,34 +37,37 @@ export function LeftDisplay({
     return `${m}:${s.toString().padStart(2, "0")}`;
   };
 
-  const renderTotals = () => (
-    <div className="practice-totals">
-      Total so far: {(totalPracticeSeconds / 60).toFixed(1).replace(/\.0$/, "")} minutes and {totalPracticeCombos} combos
-    </div>
-  );
+  const totalMins = totalPracticeSeconds > 0
+    ? (totalPracticeSeconds / 60).toFixed(1).replace(/\.0$/, "")
+    : "0";
 
   const renderContent = () => {
     if (mode === "time") {
-      if (!isTimerRunning && timeLeft === 0) return <div className="idle-text">Ready</div>;
+      if (!isTimerRunning && timeLeft === 0)
+        return <div className="idle-text">Ready</div>;
       return (
         <div className="display-wrapper">
-          {renderTotals()}
           <div className="time-display">{formatTime(timeLeft)}</div>
+          {currentCombo && (
+            <div className="current-combo" aria-live="polite">{currentCombo}</div>
+          )}
         </div>
       );
     }
-    if (!isCombosActive) return <div className="idle-text">Ready</div>;
+    // combos mode
+    if (!isCombosActive)
+      return <div className="idle-text">Ready</div>;
     return (
       <div className="display-wrapper">
-        {renderTotals()}
         <div className="combo-status">
           <div className="combo-small">{combosCompleted}/{totalCombos} completed</div>
-          {!isTimerRunning && (
-            <div className="combo-large">
-              {Math.max(0, totalCombos - combosCompleted)} remaining
-            </div>
-          )}
+          <div className="combo-large">
+            {Math.max(0, totalCombos - combosCompleted)} remaining
+          </div>
         </div>
+        {currentCombo && (
+          <div className="current-combo" aria-live="polite">{currentCombo}</div>
+        )}
       </div>
     );
   };
@@ -62,7 +75,36 @@ export function LeftDisplay({
   return (
     <div className="left-tab" onClick={onTabClick}>
       {renderContent()}
-      <div className="look-straight">LOOK STRAIGHT AHEAD!</div>
+
+      {/* Bottom bar container for toggles, title, and totals */}
+      <div className="left-bottom-bar" onClick={e => e.stopPropagation()}>
+        <div className="bottom-toggles">
+          <label className="fullname-toggle">
+            <input
+              type="checkbox"
+              id="show-full-name"
+              checked={showFullName}
+              onChange={e => setShowFullName(e.target.checked)}
+            />
+            <span className="fullname-toggle-label">Display full name?</span>
+          </label>
+          <label className="fullname-toggle">
+            <input
+              type="checkbox"
+              id="use-voice"
+              checked={useVoice}
+              onChange={e => setUseVoice(e.target.checked)}
+            />
+            <span className="fullname-toggle-label">Use Voice?</span>
+          </label>
+        </div>
+
+        <div className="look-straight">LOOK STRAIGHT AHEAD!</div>
+
+        <div className="practice-totals">
+          {totalMins} min · {totalPracticeCombos} combos total
+        </div>
+      </div>
     </div>
   );
 }

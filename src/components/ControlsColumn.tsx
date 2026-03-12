@@ -10,6 +10,8 @@ interface ControlsColumnProps {
   onStart: () => void;
   onPause: () => void;
   onReset: () => void;
+  isSessionActive: boolean;
+  hasStarted: boolean;
 }
 
 export function ControlsColumn({
@@ -24,6 +26,8 @@ export function ControlsColumn({
   onStart,
   onPause,
   onReset,
+  isSessionActive,
+  hasStarted,
 }: ControlsColumnProps) {
   return (
     <div className="controls-col">
@@ -81,10 +85,20 @@ export function ControlsColumn({
         )}
 
         <div className="button-group">
-          <button className="start-btn" onClick={onStart}>START</button>
-          <button className="reset-btn" onClick={onReset}>RESET</button>
-          {mode === "time" && (
-            <button className="pause-btn" onClick={onPause}>PAUSE</button>
+          {!isSessionActive && (
+            <button className="start-btn" onClick={onStart}>
+              {hasStarted ? "RESUME" : "START"}
+            </button>
+          )}
+          {isSessionActive && (
+            <button className="pause-btn" onClick={onPause}>
+              PAUSE
+            </button>
+          )}
+          {hasStarted && (
+            <button className="reset-btn" onClick={onReset}>
+              END / RESET
+            </button>
           )}
         </div>
       </div>

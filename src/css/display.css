@@ -30,15 +30,49 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: 0.75rem;
+}
+
+.current-combo {
+  font-size: clamp(1.6rem, 4vw, 2.8rem);
+  font-weight: 700;
+  color: #fff;
+  text-align: center;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  text-shadow: 0 0 24px rgba(255, 255, 255, 0.18);
+  line-height: 1.3;
+  max-width: 90%;
+}
+
+.generated-combos-list {
+  margin-top: 1rem;
+  max-height: 12rem;
+  width: min(38rem, 90%);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.generated-combo-row {
+  font-size: clamp(1rem, 2.5vw, 1.45rem);
+  font-weight: 700;
+  color: #d8d8d8;
+  letter-spacing: 0.08em;
 }
 
 .practice-totals {
-  font-size: 1.1rem;
-  color: #888;
+  font-size: 0.85rem;
+  color: #555;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 1.5px;
-  margin-bottom: 0.5rem;
+  white-space: nowrap;
+  pointer-events: none;
+  text-align: right;
+  flex: 1;
 }
 
 .account-prompt {
@@ -52,4 +86,23 @@
   pointer-events: none;
   z-index: 100;
   text-align: center;
+}
+
+.bottom-toggles {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  flex: 1;
+  align-items: flex-start;
+}
+
+.left-bottom-bar {
+  margin-top: auto;
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 1rem;
+  gap: 1.5rem;
 }
