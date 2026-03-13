@@ -24,6 +24,25 @@
   padding-left: 0.05em;
 }
 
+/* Mobile title positioning */
+@media (max-width: 768px) {
+  .title-ghost,
+  .title-mitts {
+    top: 0.5rem;
+    font-size: clamp(2rem, 8vw, 4rem);
+  }
+
+  .title-ghost {
+    right: auto;
+    left: 1rem;
+  }
+
+  .title-mitts {
+    left: auto;
+    right: 1rem;
+  }
+}
+
 /*  Look Straight  */
 .look-straight {
   font-size: clamp(0.65rem, 1.5vw, 1rem);

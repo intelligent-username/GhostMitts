@@ -11,6 +11,13 @@ body {
   overflow: hidden;
 }
 
+/* Mobile: allow scrolling for vertical layout */
+@media (max-width: 768px) {
+  body {
+    overflow: auto;
+  }
+}
+
 h1 {
   font-size: 2rem;
   font-weight: 700;
