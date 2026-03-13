@@ -1,0 +1,15 @@
+name = "combo-app-worker"
+main = "src/index.ts"
+compatibility_date = "2026-03-12"
+
+[[d1_databases]]
+binding = "D1_BINDING"
+database_name = "ghostmitts-combo-app-d1"
+database_id = "REPLACE_WITH_D1_DATABASE_ID"
+
+[[r2_buckets]]
+binding = "R2_BUCKET"
+bucket_name = "ghostmitts-combo-history"
+
+[vars]
+SESSION_SECRET = "REPLACE_WITH_LONG_RANDOM_SECRET"

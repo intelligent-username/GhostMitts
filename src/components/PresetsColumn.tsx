@@ -1,4 +1,5 @@
-import type { Move, PresetKey } from "../types";
+import { GenerationSettingsModal } from "./GenerationSettingsModal";
+import type { Move, PresetKey, GenerationSettings } from "../types";
 
 interface PresetsColumnProps {
   speed: number;
@@ -6,6 +7,8 @@ interface PresetsColumnProps {
   selectedPreset: PresetKey;
   onPresetChange: (p: PresetKey) => void;
   currentMoves: Move[];
+  generationSettings: GenerationSettings;
+  onGenerationSettingsChange: (next: GenerationSettings) => void;
   optionsFor: (key: number, slotName: string) => string[];
   handleChangeName: (key: number, newName: string) => void;
   handleRemoveRow: (key: number) => void;
@@ -19,6 +22,8 @@ export function PresetsColumn({
   selectedPreset,
   onPresetChange,
   currentMoves,
+  generationSettings,
+  onGenerationSettingsChange,
   optionsFor,
   handleChangeName,
   handleRemoveRow,
@@ -145,6 +150,12 @@ export function PresetsColumn({
           <div className="punch-cap-notice">{maxSlots}/{maxSlots} ——— at max</div>
         )}
       </div>
+
+      <GenerationSettingsModal
+        currentMovesCount={currentMoves.length}
+        value={generationSettings}
+        onChange={onGenerationSettingsChange}
+      />
     </div>
   );
 }

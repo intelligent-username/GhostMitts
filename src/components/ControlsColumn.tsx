@@ -1,3 +1,5 @@
+import { AuthPanel } from "./AuthPanel";
+
 interface ControlsColumnProps {
   mode: "time" | "combos";
   setMode: (mode: "time" | "combos") => void;
@@ -12,6 +14,12 @@ interface ControlsColumnProps {
   onReset: () => void;
   isSessionActive: boolean;
   hasStarted: boolean;
+  username: string | null;
+  authBusy: boolean;
+  apiConnected: boolean | null;
+  onLogin: (username: string, password: string) => Promise<void>;
+  onRegister: (username: string, password: string) => Promise<void>;
+  onLogout: () => Promise<void>;
 }
 
 export function ControlsColumn({
@@ -28,6 +36,12 @@ export function ControlsColumn({
   onReset,
   isSessionActive,
   hasStarted,
+  username,
+  authBusy,
+  apiConnected,
+  onLogin,
+  onRegister,
+  onLogout,
 }: ControlsColumnProps) {
   return (
     <div className="controls-col">
@@ -103,9 +117,14 @@ export function ControlsColumn({
         </div>
       </div>
       
-      <div className="account-prompt">
-        Create an account to save presets and practice sessions
-      </div>
+      <AuthPanel
+        username={username}
+        isBusy={authBusy}
+        apiConnected={apiConnected}
+        onLogin={onLogin}
+        onRegister={onRegister}
+        onLogout={onLogout}
+      />
     </div>
   );
 }

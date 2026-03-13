@@ -4,16 +4,43 @@ import "./css/layout.css";
 import "./css/typography.css";
 import "./css/controls.css";
 import "./css/presets.css";
+import "./css/generation.css";
+import "./css/auth.css";
 import "./css/toggles.css";
 import "./css/display.css";
 import { generateCombo } from "./scripts/combogenerator";
 import { LeftDisplay } from "./components/LeftDisplay";
 import { ControlsColumn } from "./components/ControlsColumn";
 import { PresetsColumn } from "./components/PresetsColumn";
-import type { Move, PresetKey } from "./types";
+import type { Move, PresetKey, GenerationSettings } from "./types";
 import { DEFAULT_PRESETS, MAX_SLOTS, movesForSlot } from "./utils/constants";
-import { loadTotalSeconds, loadTotalCombos, saveTotalSeconds, saveTotalCombos } from "./utils/storage";
+import { loadTotalSeconds, loadTotalCombos, saveTotalSeconds, saveTotalCombos, loadGenSettings, saveGenSettings } from "./utils/storage";
 import { useAudioSequencer } from "./hooks/useAudioSequencer";
+import { getMe, loginAccount, logoutAccount, registerAccount, upsertDailySession, upsertPreset } from "./utils/api";
+
+const DEFAULT_GENERATION_SETTINGS: GenerationSettings = { min: 1, max: 20, bias: 0.65, lengthVariance: 1 };
+
+function isDefaultGenerationSettings(s: GenerationSettings): boolean {
+  return (
+    s.min === DEFAULT_GENERATION_SETTINGS.min &&
+    s.max === DEFAULT_GENERATION_SETTINGS.max &&
+    s.bias === DEFAULT_GENERATION_SETTINGS.bias &&
+    s.lengthVariance === DEFAULT_GENERATION_SETTINGS.lengthVariance
+  );
+}
+
+function areMovesEqual(a: Move[], b: Move[]): boolean {
+  if (a === b) return true;
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    const ma = a[i]!;
+    const mb = b[i]!;
+    if (ma.key !== mb.key) return false;
+    if (ma.name !== mb.name) return false;
+    if (ma.locked !== mb.locked) return false;
+  }
+  return true;
+}
 
 export function App() {
   const [mode, setMode] = useState<"time" | "combos">("time");
@@ -29,6 +56,24 @@ export function App() {
   const [timeInputSec, setTimeInputSec] = useState<string>("0");
   const [comboInput, setComboInput]     = useState<string>("10");
   const [speed, setSpeed]               = useState<number>(3000);
+  const [generationSettings, setGenerationSettings] = useState<GenerationSettings>(() => {
+    const defaults: GenerationSettings = DEFAULT_GENERATION_SETTINGS;
+    const saved = loadGenSettings();
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved) as Partial<GenerationSettings>;
+        if (parsed && typeof parsed === "object") {
+          return {
+            min: typeof parsed.min === "number" ? parsed.min : defaults.min,
+            max: typeof parsed.max === "number" ? parsed.max : defaults.max,
+            bias: typeof parsed.bias === "number" ? parsed.bias : defaults.bias,
+            lengthVariance: typeof parsed.lengthVariance === "number" ? parsed.lengthVariance : defaults.lengthVariance,
+          };
+        }
+      } catch {}
+    }
+    return defaults;
+  });
 
   // Timer / combo run state
   const [isTimerRunning, setIsTimerRunning] = useState(false);
@@ -37,6 +82,9 @@ export function App() {
   const [combosCompleted, setCombosCompleted] = useState<number>(0);
   const [totalCombos, setTotalCombos]         = useState<number>(0);
   const [currentCombo, setCurrentCombo]       = useState<string>("");
+  const [username, setUsername]               = useState<string | null>(null);
+  const [authBusy, setAuthBusy]               = useState<boolean>(false);
+  const [apiConnected, setApiConnected]       = useState<boolean | null>(null);
 
   // Display options
   const [showFullName, setShowFullName] = useState<boolean>(false);
@@ -51,9 +99,60 @@ export function App() {
   const [totalPracticeSeconds, setTotalPracticeSeconds] = useState<number>(() => loadTotalSeconds());
   const [totalPracticeCombos, setTotalPracticeCombos] = useState<number>(() => loadTotalCombos());
 
+  // Refs for tab-close flush (avoid stale closures)
+  const usernameRef = useRef<string | null>(null);
+  const selectedPresetRef = useRef<PresetKey>(selectedPreset);
+  const currentMovesRef = useRef<Move[]>(customMoves[selectedPreset]);
+  const generationSettingsRef = useRef<GenerationSettings>(generationSettings);
+  const totalPracticeSecondsRef = useRef<number>(totalPracticeSeconds);
+  const totalPracticeCombosRef = useRef<number>(totalPracticeCombos);
+  const flushedOnCloseRef = useRef<boolean>(false);
+
+  useEffect(() => { usernameRef.current = username; }, [username]);
+  useEffect(() => { selectedPresetRef.current = selectedPreset; }, [selectedPreset]);
+  useEffect(() => { currentMovesRef.current = customMoves[selectedPreset]; }, [customMoves, selectedPreset]);
+  useEffect(() => { generationSettingsRef.current = generationSettings; }, [generationSettings]);
+  useEffect(() => { totalPracticeSecondsRef.current = totalPracticeSeconds; }, [totalPracticeSeconds]);
+  useEffect(() => { totalPracticeCombosRef.current = totalPracticeCombos; }, [totalPracticeCombos]);
+
   // Persist whenever totals change
   useEffect(() => { saveTotalSeconds(totalPracticeSeconds); }, [totalPracticeSeconds]);
   useEffect(() => { saveTotalCombos(totalPracticeCombos);  }, [totalPracticeCombos]);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const me = await getMe();
+        if (mounted) setApiConnected(true);
+        if (mounted && me.authenticated && me.username) {
+          setUsername(me.username);
+        }
+      } catch {
+        if (mounted) {
+          setUsername(null);
+          setApiConnected(false);
+        }
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
+
+  // If the day rolls over while the app is open, clear stored totals so display stays "today only".
+  useEffect(() => {
+    const checkDay = () => {
+      const sec = loadTotalSeconds();
+      const cb = loadTotalCombos();
+      if (sec === 0 && totalPracticeSeconds > 0) {
+        setTotalPracticeSeconds(0);
+      }
+      if (cb === 0 && totalPracticeCombos > 0) {
+        setTotalPracticeCombos(0);
+      }
+    };
+    const id = window.setInterval(checkDay, 60000); // every minute
+    return () => clearInterval(id);
+  }, [totalPracticeSeconds, totalPracticeCombos]);
 
   // Stable refs so interval callbacks don't go stale
   const timeLeftRef          = useRef<number>(0);
@@ -91,8 +190,13 @@ export function App() {
 
   const getCombo = useCallback(
     (len?: { min: number; max: number }) =>
-      generateCombo({ moves: currentMoves, length: len, bias: 0.65 }),
-    [currentMoves]
+      generateCombo({
+        moves: currentMoves,
+        length: len ?? { min: generationSettings.min, max: generationSettings.max },
+        bias: generationSettings.bias,
+        lengthVariance: generationSettings.lengthVariance,
+      }),
+    [currentMoves, generationSettings]
   );
 
   // Build a display string from a combo (array of keys)
@@ -183,6 +287,11 @@ export function App() {
   const updatePreset = (moves: Move[]) =>
     setCustomMoves(prev => ({ ...prev, [selectedPreset]: moves }));
 
+  // Persist generation settings whenever they change
+  useEffect(() => {
+    saveGenSettings(JSON.stringify(generationSettings));
+  }, [generationSettings]);
+
   const handleAddRow = () => {
     if (currentMoves.length >= MAX_SLOTS) return;
     const nextKey = currentMoves.length + 1;
@@ -201,6 +310,106 @@ export function App() {
     updatePreset(currentMoves.map(m => m.key === key ? { ...m, name: newName } : m));
 
   const handlePresetChange = (p: PresetKey) => setSelectedPreset(p);
+
+  const handleRegister = useCallback(async (nextUsername: string, password: string) => {
+    setAuthBusy(true);
+    try {
+      await registerAccount(nextUsername, password);
+      await loginAccount(nextUsername, password);
+      setUsername(nextUsername);
+      setApiConnected(true);
+    } finally {
+      setAuthBusy(false);
+    }
+  }, []);
+
+  const handleLogin = useCallback(async (nextUsername: string, password: string) => {
+    setAuthBusy(true);
+    try {
+      const res = await loginAccount(nextUsername, password);
+      setUsername(res.username ?? nextUsername);
+      setApiConnected(true);
+    } finally {
+      setAuthBusy(false);
+    }
+  }, []);
+
+  const handleLogout = useCallback(async () => {
+    setAuthBusy(true);
+    try {
+      await logoutAccount();
+      setUsername(null);
+      setApiConnected(true);
+    } finally {
+      setAuthBusy(false);
+    }
+  }, []);
+
+  const flushCloudSavesOnClose = useCallback(() => {
+    // Only flush once per page lifecycle.
+    if (flushedOnCloseRef.current) return;
+    flushedOnCloseRef.current = true;
+
+    const uname = usernameRef.current;
+    if (!uname) return; // must be logged in
+
+    const seconds = totalPracticeSecondsRef.current;
+    const combos = totalPracticeCombosRef.current;
+    const preset = selectedPresetRef.current;
+    const moves = currentMovesRef.current;
+    const gen = generationSettingsRef.current;
+
+    const totalsNonDefault = seconds > 0 || combos > 0;
+    const genNonDefault = !isDefaultGenerationSettings(gen);
+    const movesNonDefault = !areMovesEqual(moves, DEFAULT_PRESETS[preset]);
+
+    // Only save if there is something meaningfully non-default.
+    if (!totalsNonDefault && !genNonDefault && !movesNonDefault) return;
+
+    const date = new Date().toISOString().split("T")[0]!;
+
+    if (totalsNonDefault) {
+      void upsertDailySession(
+        { date, num_combos: combos, time_seconds: seconds },
+        { keepalive: true }
+      ).catch(() => {});
+    }
+
+    if (genNonDefault || movesNonDefault) {
+      const rearKickNames = new Set([
+        "REAR KICK", "REAR TEEP", "BODY KICK", "ROUNDHOUSE KICK", "LOW KICK", "HEAD KICK",
+      ]);
+
+      const frequencies = moves.map((move) => {
+        let weight = Math.pow(gen.bias, move.key - 1);
+        if (rearKickNames.has(move.name.toUpperCase())) {
+          weight *= 1.8;
+        }
+        return { key: move.key, weight };
+      });
+
+      void upsertPreset(
+        {
+          preset_name: preset,
+          preset_data: { moves, generationSettings: gen, frequencies },
+        },
+        { keepalive: true }
+      ).catch(() => {});
+    }
+  }, []);
+
+  useEffect(() => {
+    const onPageHide = () => flushCloudSavesOnClose();
+    const onBeforeUnload = () => flushCloudSavesOnClose();
+
+    window.addEventListener("pagehide", onPageHide);
+    window.addEventListener("beforeunload", onBeforeUnload);
+
+    return () => {
+      window.removeEventListener("pagehide", onPageHide);
+      window.removeEventListener("beforeunload", onBeforeUnload);
+    };
+  }, [flushCloudSavesOnClose]);
 
   // ── session control ───────────────────────────────────────────────────────
   const hasTimeRemaining = timeLeft > 0;
@@ -309,6 +518,12 @@ export function App() {
           onReset={handleReset}
           isSessionActive={isSessionActive}
           hasStarted={hasStarted}
+          username={username}
+          authBusy={authBusy}
+          apiConnected={apiConnected}
+          onLogin={handleLogin}
+          onRegister={handleRegister}
+          onLogout={handleLogout}
         />
 
         {/*  Presets column  */}
@@ -318,6 +533,8 @@ export function App() {
           selectedPreset={selectedPreset}
           onPresetChange={handlePresetChange}
           currentMoves={currentMoves}
+          generationSettings={generationSettings}
+          onGenerationSettingsChange={setGenerationSettings}
           optionsFor={optionsFor}
           handleChangeName={handleChangeName}
           handleRemoveRow={handleRemoveRow}

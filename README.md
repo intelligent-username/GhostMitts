@@ -42,5 +42,3 @@ python gen.py
 ```
 
 Make sure to install the edge-tts and other libraries (`run pip install -r requirements.txt`) before running the Python script.
-
-

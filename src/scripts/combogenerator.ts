@@ -25,12 +25,22 @@ const KICK_NAMES = new Set([
   "FRONT KICK", "LEAD TEEP", "REAR TEEP", "CHECK KICK",
 ]);
 
+const REAR_KICK_NAMES = new Set([
+  "REAR KICK",
+  "REAR TEEP",
+  "BODY KICK",
+  "ROUNDHOUSE KICK",
+  "LOW KICK",
+  "HEAD KICK",
+]);
+
 export type Move = { key: number; name: string; locked: boolean };
 
 export interface ComboOptions {
   moves: Move[];
   length?: { min: number; max: number };
   bias?: number;
+  lengthVariance?: number;
 }
 
 function randInt(min: number, max: number): number {
@@ -57,14 +67,28 @@ function isKick(moves: Move[], key: number): boolean {
 export function generateCombo(opts: ComboOptions): number[] {
   const {
     moves,
-    length = { min: 2, max: 5 },
+    length = { min: 1, max: 20 },
     bias = 0.65,
+    lengthVariance = 1,
   } = opts;
 
   const allKeys = moves.map(m => m.key);
   if (allKeys.length === 0) return [];
 
-  const targetLen = randInt(length.min, Math.min(length.max, allKeys.length));
+  // Choose target length using Gaussian distribution centered at midpoint
+  const minLen = Math.max(1, Math.min(length.min, 20));
+  const maxLen = Math.max(minLen, Math.min(length.max, 20));
+  const midpoint = (minLen + maxLen) / 2;
+  const sigma = Math.max(0.5, (maxLen - minLen) / 4 * lengthVariance);
+
+  // Build weights for each possible length
+  const lengthWeights: { value: number; weight: number }[] = [];
+  for (let len = minLen; len <= maxLen; len++) {
+    const z = (len - midpoint) / sigma;
+    const weight = Math.exp(-0.5 * z * z);
+    lengthWeights.push({ value: len, weight });
+  }
+  const targetLen = weightedPick(lengthWeights);
   const weightOf = (k: number) => Math.pow(bias, k - 1);
 
   const combo: number[] = [];
@@ -117,6 +141,13 @@ export function generateCombo(opts: ComboOptions): number[] {
 
     const weighted = candidates.map(k => {
       let w = weightOf(k);
+
+      const move = moves.find(m => m.key === k);
+      const isRearKick = !!move && REAR_KICK_NAMES.has(move.name.toUpperCase());
+      if (isRearKick) {
+        w *= 1.4;
+      }
+
       if (k === 1) {
         // Add 1 to doubleJabCount if this candidate '1' would create another back-to-back '1'
         const currentWouldBeDouble = last === 1 ? 1 : 0;
