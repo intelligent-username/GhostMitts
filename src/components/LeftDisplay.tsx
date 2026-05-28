@@ -13,6 +13,7 @@ interface LeftDisplayProps {
   setShowFullName: (val: boolean) => void;
   useVoice: boolean;
   setUseVoice: (val: boolean) => void;
+  isMobile?: boolean;
 }
 
 export function LeftDisplay({
@@ -30,6 +31,7 @@ export function LeftDisplay({
   setShowFullName,
   useVoice,
   setUseVoice,
+  isMobile = false,
 }: LeftDisplayProps) {
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
@@ -44,7 +46,7 @@ export function LeftDisplay({
   const renderContent = () => {
     if (mode === "time") {
       if (!isTimerRunning && timeLeft === 0)
-        return <div className="idle-text">Ready</div>;
+        return isMobile ? null : <div className="idle-text">Ready</div>;
       return (
         <div className="display-wrapper">
           <div className="time-display">{formatTime(timeLeft)}</div>
@@ -56,7 +58,7 @@ export function LeftDisplay({
     }
     // combos mode
     if (!isCombosActive)
-      return <div className="idle-text">Ready</div>;
+      return isMobile ? null : <div className="idle-text">Ready</div>;
     return (
       <div className="display-wrapper">
         <div className="combo-status">
@@ -72,10 +74,18 @@ export function LeftDisplay({
     );
   };
 
+  if (isMobile) {
+    return (
+      <div className="left-tab mobile-display-tab">
+        {renderContent()}
+      </div>
+    );
+  }
+
   return (
     <div className="left-tab" onClick={onTabClick}>
       {renderContent()}
-
+ 
       {/* Bottom bar container for toggles, title, and totals */}
       <div className="left-bottom-bar" onClick={e => e.stopPropagation()}>
         <div className="bottom-toggles">

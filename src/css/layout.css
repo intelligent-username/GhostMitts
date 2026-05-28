@@ -147,3 +147,194 @@
     min-height: auto;
   }
 }
+
+/* Mobile Only Styles */
+.mobile-container {
+  display: flex;
+  flex-direction: column;
+  background: #050505;
+  color: #fff;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  padding: 1rem;
+  box-sizing: border-box;
+}
+
+.mobile-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding: 0 0.5rem;
+  flex: 0 0 auto;
+}
+
+.ghost-mitts-title-h1 {
+  font-size: 2.1rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  background: linear-gradient(to right, #ffffff, #999999);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin: 0;
+}
+
+.settings-toggle-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  padding: 0;
+}
+
+.settings-toggle-btn:active {
+  transform: scale(0.92);
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.mobile-display-tab {
+  background: linear-gradient(135deg, #121214 0%, #09090b 100%);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+  padding: 2rem 1.5rem;
+  margin-bottom: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  flex: 0 0 auto !important;
+  min-height: 140px !important;
+  max-height: 220px !important;
+}
+
+.mobile-totals-footer {
+  text-align: center;
+  font-size: 0.85rem;
+  color: #666666;
+  margin-top: auto;
+  padding: 0.75rem 0;
+  letter-spacing: 0.02em;
+  flex: 0 0 auto;
+}
+
+/* Glassmorphic settings modal overlay */
+.mobile-settings-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+}
+
+.mobile-settings-container {
+  background: #0a0a0c;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px 24px 0 0;
+  width: 100%;
+  height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5);
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.mobile-settings-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.mobile-settings-header h2 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin: 0;
+  color: #fff;
+}
+
+.mobile-settings-close-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  border-radius: 12px;
+  padding: 0.5rem 1rem;
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.mobile-settings-close-btn:active {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.mobile-settings-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  padding-bottom: 4rem;
+}
+
+.mobile-settings-toggles {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 1.2rem;
+}
+
+.mobile-settings-toggles .fullname-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-direction: row-reverse;
+  margin: 0;
+  width: 100%;
+}
+
+.mobile-auth-wrapper {
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  padding-top: 1.5rem;
+}
+
+/* Ensure controls stack cleanly inside single column on mobile */
+@media (max-width: 768px) {
+  .mobile-container .controls-col {
+    border-bottom: none;
+    padding: 0.5rem;
+    width: 100%;
+    gap: 1.5rem;
+  }
+}
+

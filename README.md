@@ -99,7 +99,7 @@ After deploy, Wrangler prints a `*.workers.dev` URL. Verify it responds:
 curl https://YOUR_WORKER_SUBDOMAIN.workers.dev/health
 ```
 
-#### If the Vercel frontend says "API offline"
+#### If the Vercel frontend says "Accounts Offline"
 
 The frontend talks to the API using `BUN_PUBLIC_API_BASE` **at build time**.
 

@@ -12,6 +12,7 @@ import { generateCombo } from "./scripts/combogenerator";
 import { LeftDisplay } from "./components/LeftDisplay";
 import { ControlsColumn } from "./components/ControlsColumn";
 import { PresetsColumn } from "./components/PresetsColumn";
+import { AuthPanel } from "./components/AuthPanel";
 import type { Move, PresetKey, GenerationSettings } from "./types";
 import { DEFAULT_PRESETS, MAX_SLOTS, movesForSlot } from "./utils/constants";
 import { loadTotalSeconds, loadTotalCombos, saveTotalSeconds, saveTotalCombos, loadGenSettings, saveGenSettings } from "./utils/storage";
@@ -42,7 +43,26 @@ function areMovesEqual(a: Move[], b: Move[]): boolean {
   return true;
 }
 
+const SettingsIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="settings-svg">
+    <circle cx="12" cy="12" r="3"/>
+    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+  </svg>
+);
+
 export function App() {
+  const [isMobile, setIsMobile] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
   const [mode, setMode] = useState<"time" | "combos">("time");
 
   const [selectedPreset, setSelectedPreset] = useState<PresetKey>("Boxing");
@@ -636,6 +656,140 @@ export function App() {
   };
 
   //  Render
+  if (isMobile) {
+    const totalMins = totalPracticeSeconds > 0
+      ? (totalPracticeSeconds / 60).toFixed(1).replace(/\.0$/, "")
+      : "0";
+
+    return (
+      <div className="app-container mobile-container">
+        <div className="mobile-header">
+          <h1 className="ghost-mitts-title-h1">GhostMitts</h1>
+          <button className="settings-toggle-btn" onClick={() => setShowSettings(true)}>
+            <SettingsIcon />
+          </button>
+        </div>
+
+        {/* Dynamic Display of ongoing session */}
+        {hasStarted && (
+          <LeftDisplay
+            mode={mode}
+            isTimerRunning={isTimerRunning}
+            timeLeft={timeLeft}
+            isCombosActive={isCombosActive}
+            combosCompleted={combosCompleted}
+            totalCombos={totalCombos}
+            onTabClick={() => {}}
+            totalPracticeSeconds={totalPracticeSeconds}
+            totalPracticeCombos={totalPracticeCombos}
+            currentCombo={currentCombo}
+            showFullName={showFullName}
+            setShowFullName={setShowFullName}
+            useVoice={useVoice}
+            setUseVoice={setUseVoice}
+            isMobile={true}
+          />
+        )}
+
+        {/* Clean Controls column (without AuthPanel) */}
+        <ControlsColumn
+          mode={mode}
+          setMode={setMode}
+          timeInputMin={timeInputMin}
+          setTimeInputMin={setTimeInputMin}
+          timeInputSec={timeInputSec}
+          setTimeInputSec={setTimeInputSec}
+          comboInput={comboInput}
+          setComboInput={setComboInput}
+          onStart={handleStart}
+          onPause={handlePause}
+          onReset={handleReset}
+          isSessionActive={isSessionActive}
+          hasStarted={hasStarted}
+          username={username}
+          authBusy={authBusy}
+          apiConnected={apiConnected}
+          onLogin={handleLogin}
+          onRegister={handleRegister}
+          onLogout={handleLogout}
+          isMobile={true}
+        />
+
+        {/* Bottom Practice Totals */}
+        <div className="mobile-totals-footer">
+          {totalMins} min · {totalPracticeCombos} combos total today
+        </div>
+
+        {/* Settings Drawer/Overlay Modal */}
+        {showSettings && (
+          <div className="mobile-settings-overlay">
+            <div className="mobile-settings-container">
+              <div className="mobile-settings-header">
+                <h2>Settings</h2>
+                <button className="mobile-settings-close-btn" onClick={() => setShowSettings(false)}>
+                  Close
+                </button>
+              </div>
+
+              <div className="mobile-settings-body">
+                {/* Voice & Full Name Toggles */}
+                <div className="mobile-settings-toggles">
+                  <label className="fullname-toggle">
+                    <input
+                      type="checkbox"
+                      id="show-full-name-mobile"
+                      checked={showFullName}
+                      onChange={e => setShowFullName(e.target.checked)}
+                    />
+                    <span className="fullname-toggle-label">Display full name?</span>
+                  </label>
+                  <label className="fullname-toggle">
+                    <input
+                      type="checkbox"
+                      id="use-voice-mobile"
+                      checked={useVoice}
+                      onChange={e => setUseVoice(e.target.checked)}
+                    />
+                    <span className="fullname-toggle-label">Use Voice?</span>
+                  </label>
+                </div>
+
+                {/* Presets and custom move configs */}
+                <PresetsColumn
+                  speed={speed}
+                  setSpeed={setSpeed}
+                  selectedPreset={selectedPreset}
+                  onPresetChange={handlePresetChange}
+                  currentMoves={currentMoves}
+                  generationSettings={generationSettings}
+                  onGenerationSettingsChange={setGenerationSettings}
+                  optionsFor={optionsFor}
+                  handleChangeName={handleChangeName}
+                  handleRemoveRow={handleRemoveRow}
+                  handleAddRow={handleAddRow}
+                  maxSlots={MAX_SLOTS}
+                />
+
+                {/* Auth Panel for Cloud Save */}
+                <div className="mobile-auth-wrapper">
+                  <AuthPanel
+                    username={username}
+                    isBusy={authBusy}
+                    apiConnected={apiConnected}
+                    onLogin={handleLogin}
+                    onRegister={handleRegister}
+                    onLogout={handleLogout}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Desktop/Tablet default view
   return (
     <div className="app-container">
       <div className="title-ghost">Ghost</div>
@@ -657,6 +811,7 @@ export function App() {
         setShowFullName={setShowFullName}
         useVoice={useVoice}
         setUseVoice={setUseVoice}
+        isMobile={false}
       />
 
       {/* RIGHT has two columns: controls & presets */}
@@ -683,6 +838,7 @@ export function App() {
           onLogin={handleLogin}
           onRegister={handleRegister}
           onLogout={handleLogout}
+          isMobile={false}
         />
 
         {/*  Presets column  */}

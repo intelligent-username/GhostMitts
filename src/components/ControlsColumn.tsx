@@ -20,6 +20,7 @@ interface ControlsColumnProps {
   onLogin: (username: string, password: string) => Promise<void>;
   onRegister: (username: string, password: string) => Promise<void>;
   onLogout: () => Promise<void>;
+  isMobile?: boolean;
 }
 
 export function ControlsColumn({
@@ -42,6 +43,7 @@ export function ControlsColumn({
   onLogin,
   onRegister,
   onLogout,
+  isMobile = false,
 }: ControlsColumnProps) {
   return (
     <div className="controls-col">
@@ -117,14 +119,16 @@ export function ControlsColumn({
         </div>
       </div>
       
-      <AuthPanel
-        username={username}
-        isBusy={authBusy}
-        apiConnected={apiConnected}
-        onLogin={onLogin}
-        onRegister={onRegister}
-        onLogout={onLogout}
-      />
+      {!isMobile && (
+        <AuthPanel
+          username={username}
+          isBusy={authBusy}
+          apiConnected={apiConnected}
+          onLogin={onLogin}
+          onRegister={onRegister}
+          onLogout={onLogout}
+        />
+      )}
     </div>
   );
 }
