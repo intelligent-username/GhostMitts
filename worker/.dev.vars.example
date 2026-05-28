@@ -1,0 +1,12 @@
+# Copy to `worker/.dev.vars` (this file is ignored by git)
+# Then run: `bunx wrangler dev --config worker/wrangler.toml`
+
+# CORS allowlist (comma-separated origins)
+ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+
+# Turso (store your real values in worker/.dev.vars, NOT here)
+TURSO_DATABASE_URL=libsql://YOUR_DB.turso.io
+TURSO_AUTH_TOKEN=YOUR_TURSO_TOKEN
+
+# Session signing secret (long random string)
+SESSION_SECRET=REPLACE_WITH_LONG_RANDOM_SECRET

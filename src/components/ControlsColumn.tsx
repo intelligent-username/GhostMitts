@@ -111,7 +111,7 @@ export function ControlsColumn({
           )}
           {hasStarted && (
             <button className="reset-btn" onClick={onReset}>
-              END / RESET
+              RESET
             </button>
           )}
         </div>

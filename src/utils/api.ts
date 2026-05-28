@@ -1,6 +1,7 @@
 import type { GenerationSettings, Move, PresetKey } from "../types";
 
 const API_BASE: string =
+  process.env.BUN_PUBLIC_API_BASE ??
   (import.meta as any)?.env?.BUN_PUBLIC_API_BASE ??
   (globalThis as any)?.BUN_PUBLIC_API_BASE ??
   "";
@@ -44,6 +45,33 @@ export async function logoutAccount() {
 
 export async function getMe() {
   return requestJson<{ authenticated: boolean; username?: string }>("/me", { method: "GET" });
+}
+
+export async function getBootstrap() {
+  return requestJson<{
+    username: string;
+    todaySession: null | { date: string; num_combos: number; time_seconds: number };
+    presets: Array<{ preset_name: string; preset_data: unknown }>;
+    streak: number;
+  }>("/bootstrap", { method: "GET" });
+}
+
+export async function insertWorkout(payload: {
+  workout_id?: string;
+  started_at: string;
+  ended_at: string;
+  mode: "time" | "combos";
+  preset_name: PresetKey;
+  speed_ms: number;
+  combos_completed: number;
+  duration_seconds: number;
+  workout_data: unknown;
+}, options?: { keepalive?: boolean }) {
+  return requestJson<{ success: boolean; workout_id: string }>("/workouts/insert", {
+    method: "POST",
+    body: JSON.stringify(payload),
+    keepalive: options?.keepalive,
+  });
 }
 
 export async function upsertDailySession(payload: {

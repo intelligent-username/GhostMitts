@@ -16,7 +16,7 @@ import type { Move, PresetKey, GenerationSettings } from "./types";
 import { DEFAULT_PRESETS, MAX_SLOTS, movesForSlot } from "./utils/constants";
 import { loadTotalSeconds, loadTotalCombos, saveTotalSeconds, saveTotalCombos, loadGenSettings, saveGenSettings } from "./utils/storage";
 import { useAudioSequencer } from "./hooks/useAudioSequencer";
-import { getMe, loginAccount, logoutAccount, registerAccount, upsertDailySession, upsertPreset } from "./utils/api";
+import { getBootstrap, getMe, insertWorkout, loginAccount, logoutAccount, registerAccount, upsertDailySession, upsertPreset } from "./utils/api";
 
 const DEFAULT_GENERATION_SETTINGS: GenerationSettings = { min: 1, max: 20, bias: 0.65, lengthVariance: 1 };
 
@@ -86,6 +86,8 @@ export function App() {
   const [authBusy, setAuthBusy]               = useState<boolean>(false);
   const [apiConnected, setApiConnected]       = useState<boolean | null>(null);
 
+  const speedRef = useRef<number>(3000);
+
   // Display options
   const [showFullName, setShowFullName] = useState<boolean>(false);
   const showFullNameRef = useRef<boolean>(false);
@@ -114,6 +116,7 @@ export function App() {
   useEffect(() => { generationSettingsRef.current = generationSettings; }, [generationSettings]);
   useEffect(() => { totalPracticeSecondsRef.current = totalPracticeSeconds; }, [totalPracticeSeconds]);
   useEffect(() => { totalPracticeCombosRef.current = totalPracticeCombos; }, [totalPracticeCombos]);
+  useEffect(() => { speedRef.current = speed; }, [speed]);
 
   // Persist whenever totals change
   useEffect(() => { saveTotalSeconds(totalPracticeSeconds); }, [totalPracticeSeconds]);
@@ -127,6 +130,44 @@ export function App() {
         if (mounted) setApiConnected(true);
         if (mounted && me.authenticated && me.username) {
           setUsername(me.username);
+          try {
+            const boot = await getBootstrap();
+            if (!mounted) return;
+            if (boot.todaySession) {
+              setTotalPracticeSeconds(Math.max(0, Number(boot.todaySession.time_seconds || 0)));
+              setTotalPracticeCombos(Math.max(0, Number(boot.todaySession.num_combos || 0)));
+            }
+
+            const presetMap = new Map<PresetKey, { moves?: Move[]; generationSettings?: GenerationSettings }>();
+            for (const p of boot.presets) {
+              if (p.preset_name === "Boxing" || p.preset_name === "Kickboxing" || p.preset_name === "Muay Thai") {
+                const data = p.preset_data as any;
+                presetMap.set(p.preset_name, {
+                  moves: Array.isArray(data?.moves) ? data.moves : undefined,
+                  generationSettings: data?.generationSettings,
+                });
+              }
+            }
+
+            if (presetMap.size > 0) {
+              setCustomMoves(prev => {
+                const next = { ...prev };
+                for (const [key, val] of presetMap.entries()) {
+                  if (val.moves && Array.isArray(val.moves)) {
+                    next[key] = val.moves as Move[];
+                  }
+                }
+                return next;
+              });
+
+              const current = presetMap.get(selectedPresetRef.current);
+              if (current?.generationSettings && typeof current.generationSettings === "object") {
+                setGenerationSettings(current.generationSettings);
+              }
+            }
+          } catch {
+            // Ignore bootstrap failures (API reachable but user data unavailable)
+          }
         }
       } catch {
         if (mounted) {
@@ -136,6 +177,68 @@ export function App() {
       }
     })();
     return () => { mounted = false; };
+  }, []);
+
+  // ── workout segment logging (detailed session storage) ───────────────────
+  const activeWorkoutStartMsRef = useRef<number | null>(null);
+  const activeWorkoutCombosStartRef = useRef<number>(0);
+  const activeWorkoutModeRef = useRef<"time" | "combos" | null>(null);
+  const activeWorkoutPresetRef = useRef<PresetKey | null>(null);
+  const activeWorkoutMovesRef = useRef<Move[] | null>(null);
+  const activeWorkoutGenRef = useRef<GenerationSettings | null>(null);
+  const activeWorkoutSpeedMsRef = useRef<number>(0);
+
+  const startWorkoutSegment = useCallback(() => {
+    if (activeWorkoutStartMsRef.current != null) return;
+    activeWorkoutStartMsRef.current = Date.now();
+    activeWorkoutCombosStartRef.current = combosCompletedRef.current;
+    activeWorkoutModeRef.current = mode;
+    activeWorkoutPresetRef.current = selectedPresetRef.current;
+    activeWorkoutMovesRef.current = currentMovesRef.current;
+    activeWorkoutGenRef.current = generationSettingsRef.current;
+    activeWorkoutSpeedMsRef.current = speedRef.current;
+  }, [mode]);
+
+  const endWorkoutSegment = useCallback((reason: "pause" | "complete" | "reset" | "unload", options?: { keepalive?: boolean }) => {
+    const startMs = activeWorkoutStartMsRef.current;
+    if (startMs == null) return;
+
+    activeWorkoutStartMsRef.current = null;
+
+    const uname = usernameRef.current;
+    if (!uname) return;
+
+    const endMs = Date.now();
+    const startedAt = new Date(startMs).toISOString();
+    const endedAt = new Date(endMs).toISOString();
+    const modeAtStart = activeWorkoutModeRef.current;
+    const preset = activeWorkoutPresetRef.current;
+    const speedMs = activeWorkoutSpeedMsRef.current;
+
+    if (!modeAtStart || !preset) return;
+
+    const combosDelta = Math.max(0, combosCompletedRef.current - activeWorkoutCombosStartRef.current);
+    const durationSeconds = Math.max(0, Math.round((endMs - startMs) / 1000));
+
+    if (combosDelta === 0 && durationSeconds === 0) return;
+
+    void insertWorkout(
+      {
+        started_at: startedAt,
+        ended_at: endedAt,
+        mode: modeAtStart,
+        preset_name: preset,
+        speed_ms: speedMs,
+        combos_completed: combosDelta,
+        duration_seconds: durationSeconds,
+        workout_data: {
+          reason,
+          moves: activeWorkoutMovesRef.current,
+          generationSettings: activeWorkoutGenRef.current,
+        },
+      },
+      { keepalive: options?.keepalive }
+    ).catch(() => {});
   }, []);
 
   // If the day rolls over while the app is open, clear stored totals so display stays "today only".
@@ -172,6 +275,7 @@ export function App() {
       timerRef.current = window.setTimeout(() => setTimeLeft(p => p - 1), 1000);
     } else if (timeLeft === 0 && isTimerRunning) {
       // Timer finished
+      endWorkoutSegment("complete");
       setIsTimerRunning(false);
       setTotalPracticeSeconds(p => p + currentTimerDuration.current);
       if (combosCompletedRef.current > 0) {
@@ -179,7 +283,7 @@ export function App() {
       }
     }
     return () => { if (timerRef.current) clearTimeout(timerRef.current); };
-  }, [isTimerRunning, timeLeft]);
+  }, [isTimerRunning, timeLeft, endWorkoutSegment]);
 
   // ── helpers (must be before the interval effect that uses getCombo) ───────
   const currentMoves = customMoves[selectedPreset];
@@ -244,6 +348,7 @@ export function App() {
       const limit = totalCombosRef.current;
       if (limit > 0 && combosCompletedRef.current >= limit) {
         if (mode === "combos") {
+          endWorkoutSegment("complete");
           setIsCombosActive(false);
           // Calculate final elapsed time
           const elapsed = Math.round((Date.now() - sessionStartMs.current) / 1000);
@@ -281,7 +386,7 @@ export function App() {
     const interval = window.setInterval(emitCombo, speed);
     return () => clearInterval(interval);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, isTimerRunning, isCombosActive, speed, comboToString, playComboAudio, replenishQueue]);
+  }, [mode, isTimerRunning, isCombosActive, speed, comboToString, playComboAudio, replenishQueue, endWorkoutSegment]);
 
   // ── preset mutations ──────────────────────────────────────────────────────
   const updatePreset = (moves: Move[]) =>
@@ -318,6 +423,14 @@ export function App() {
       await loginAccount(nextUsername, password);
       setUsername(nextUsername);
       setApiConnected(true);
+
+      try {
+        const boot = await getBootstrap();
+        if (boot.todaySession) {
+          setTotalPracticeSeconds(Math.max(0, Number(boot.todaySession.time_seconds || 0)));
+          setTotalPracticeCombos(Math.max(0, Number(boot.todaySession.num_combos || 0)));
+        }
+      } catch {}
     } finally {
       setAuthBusy(false);
     }
@@ -329,6 +442,42 @@ export function App() {
       const res = await loginAccount(nextUsername, password);
       setUsername(res.username ?? nextUsername);
       setApiConnected(true);
+
+       try {
+        const boot = await getBootstrap();
+        if (boot.todaySession) {
+          setTotalPracticeSeconds(Math.max(0, Number(boot.todaySession.time_seconds || 0)));
+          setTotalPracticeCombos(Math.max(0, Number(boot.todaySession.num_combos || 0)));
+        }
+
+        const presetMap = new Map<PresetKey, { moves?: Move[]; generationSettings?: GenerationSettings }>();
+        for (const p of boot.presets) {
+          if (p.preset_name === "Boxing" || p.preset_name === "Kickboxing" || p.preset_name === "Muay Thai") {
+            const data = p.preset_data as any;
+            presetMap.set(p.preset_name, {
+              moves: Array.isArray(data?.moves) ? data.moves : undefined,
+              generationSettings: data?.generationSettings,
+            });
+          }
+        }
+
+        if (presetMap.size > 0) {
+          setCustomMoves(prev => {
+            const next = { ...prev };
+            for (const [key, val] of presetMap.entries()) {
+              if (val.moves && Array.isArray(val.moves)) {
+                next[key] = val.moves as Move[];
+              }
+            }
+            return next;
+          });
+
+          const current = presetMap.get(selectedPresetRef.current);
+          if (current?.generationSettings && typeof current.generationSettings === "object") {
+            setGenerationSettings(current.generationSettings);
+          }
+        }
+      } catch {}
     } finally {
       setAuthBusy(false);
     }
@@ -352,6 +501,9 @@ export function App() {
 
     const uname = usernameRef.current;
     if (!uname) return; // must be logged in
+
+    // If there's an in-progress workout segment, log it.
+    endWorkoutSegment("unload", { keepalive: true });
 
     const seconds = totalPracticeSecondsRef.current;
     const combos = totalPracticeCombosRef.current;
@@ -396,7 +548,7 @@ export function App() {
         { keepalive: true }
       ).catch(() => {});
     }
-  }, []);
+  }, [endWorkoutSegment]);
 
   useEffect(() => {
     const onPageHide = () => flushCloudSavesOnClose();
@@ -431,9 +583,11 @@ export function App() {
           totalCombosRef.current = 0;
           setTimeLeft(total);
           currentTimerDuration.current = total;
+          startWorkoutSegment();
           setIsTimerRunning(true);
         }
       } else {
+        startWorkoutSegment();
         setIsTimerRunning(true); // RESUME
       }
     } else {
@@ -446,10 +600,12 @@ export function App() {
           setTotalCombos(count);
           totalCombosRef.current = count;
           sessionStartMs.current = Date.now();
+          startWorkoutSegment();
           setIsCombosActive(true);
         }
       } else if (!isCombosActive) {
         sessionStartMs.current = Date.now(); // RESUME
+        startWorkoutSegment();
         setIsCombosActive(true);
       }
     }
@@ -457,15 +613,18 @@ export function App() {
 
   const handlePause = () => {
     if (mode === "time") {
+      endWorkoutSegment("pause");
       setIsTimerRunning(false);
     } else if (isCombosActive) {
       setIsCombosActive(false);
       const elapsed = Math.round((Date.now() - sessionStartMs.current) / 1000);
       setTotalPracticeSeconds(p => p + Math.max(0, elapsed));
+      endWorkoutSegment("pause");
     }
   };
 
   const handleReset = () => {
+    endWorkoutSegment("reset");
     setIsTimerRunning(false);
     setIsCombosActive(false);
     setTimeLeft(0);

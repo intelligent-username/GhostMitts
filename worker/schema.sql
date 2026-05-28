@@ -23,3 +23,21 @@ CREATE TABLE IF NOT EXISTS presets (
   FOREIGN KEY (username) REFERENCES users(username) ON DELETE CASCADE,
   PRIMARY KEY (username, preset_name)
 );
+
+CREATE TABLE IF NOT EXISTS workouts (
+  workout_id TEXT PRIMARY KEY,
+  username TEXT NOT NULL,
+  date TEXT NOT NULL,
+  started_at DATETIME NOT NULL,
+  ended_at DATETIME NOT NULL,
+  mode TEXT NOT NULL,
+  preset_name TEXT,
+  speed_ms INTEGER,
+  combos_completed INTEGER NOT NULL DEFAULT 0,
+  duration_seconds INTEGER NOT NULL DEFAULT 0,
+  workout_data JSON,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (username) REFERENCES users(username) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_workouts_user_date ON workouts(username, date);

@@ -34,7 +34,7 @@ export function PresetsColumn({
     <div className="presets-col">
       <div className="speed-container">
         <div className="speed-header">
-          <span className="speed-label">Speed</span>
+          <span className="speed-label">Time per Combo</span>
           <div className="speed-interactive">
             <input
               type="text"

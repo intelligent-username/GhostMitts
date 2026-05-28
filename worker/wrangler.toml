@@ -1,15 +1,25 @@
-name = "combo-app-worker"
+name = "ghostmitts-api"
 main = "src/index.ts"
 compatibility_date = "2026-03-12"
 
-[[d1_databases]]
-binding = "D1_BINDING"
-database_name = "ghostmitts-combo-app-d1"
-database_id = "REPLACE_WITH_D1_DATABASE_ID"
+# Deploy to *.workers.dev by default. Add `routes` only when you have a custom domain.
+workers_dev = true
 
-[[r2_buckets]]
-binding = "R2_BUCKET"
-bucket_name = "ghostmitts-combo-history"
+compatibility_flags = ["nodejs_compat"]
+
+# Custom domain routing (optional)
+# Uncomment + fill in when you're ready to bind a custom domain.
+# routes = [
+# 	{ pattern = "api.example.com/*", zone_name = "example.com" }
+# ]
 
 [vars]
-SESSION_SECRET = "REPLACE_WITH_LONG_RANDOM_SECRET"
+# Comma-separated browser origins that may call your API (CORS allowlist)
+# Example: "http://localhost:3000,https://your-frontend.com"
+# If left empty, the Worker will only allow localhost origins (safe default).
+ALLOWED_ORIGINS = "https://pads.varak.dev, http://localhost:3000,http://127.0.0.1:3000"
+
+# Secrets (set via `wrangler secret put ...`):
+# - TURSO_DATABASE_URL
+# - TURSO_AUTH_TOKEN
+# - SESSION_SECRET
