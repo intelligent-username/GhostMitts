@@ -119,16 +119,14 @@ export function ControlsColumn({
         </div>
       </div>
       
-      {!isMobile && (
-        <AuthPanel
-          username={username}
-          isBusy={authBusy}
-          apiConnected={apiConnected}
-          onLogin={onLogin}
-          onRegister={onRegister}
-          onLogout={onLogout}
-        />
-      )}
+      <AuthPanel
+        username={username}
+        isBusy={authBusy}
+        apiConnected={apiConnected}
+        onLogin={onLogin}
+        onRegister={onRegister}
+        onLogout={onLogout}
+      />
     </div>
   );
 }

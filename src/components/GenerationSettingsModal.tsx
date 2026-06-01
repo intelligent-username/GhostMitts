@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef } from "react";
 import type { GenerationSettings, DisplayMode, Move } from "../types";
 
 interface GenerationSettingsModalProps {
@@ -12,6 +12,7 @@ interface GenerationSettingsModalProps {
   currentMoves: Move[];
   customDisplayKeys: Set<number>;
   setCustomDisplayKeys: (keys: Set<number>) => void;
+  onOpen?: () => void;
 }
 
 function clampSettings(settings: GenerationSettings): GenerationSettings {
@@ -37,8 +38,10 @@ function buildSmoothPath(points: Array<{ x: number; y: number }>): string {
   return path;
 }
 
-export function GenerationSettingsModal({ currentMovesCount, value, onChange, displayMode, setDisplayMode, useVoice, setUseVoice, currentMoves, customDisplayKeys, setCustomDisplayKeys }: GenerationSettingsModalProps) {
+export function GenerationSettingsModal({ currentMovesCount, value, onChange, displayMode, setDisplayMode, useVoice, setUseVoice, currentMoves, customDisplayKeys, setCustomDisplayKeys, onOpen }: GenerationSettingsModalProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [draggingKey, setDraggingKey] = useState<number | null>(null);
+  const lastYRef = useRef<number | null>(null);
 
   const safeValue = useMemo(
     () => clampSettings(value),
@@ -180,6 +183,61 @@ export function GenerationSettingsModal({ currentMovesCount, value, onChange, di
     return { width, height, leftPad, topPad, plotHeight, curvePoints, smoothPath, fillPath };
   }, [keyDistribution.probs]);
 
+  const handlePointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
+    const svgRect = e.currentTarget.getBoundingClientRect();
+    const ex = e.clientX - svgRect.left;
+    const ey = e.clientY - svgRect.top;
+    
+    const scaleX = 520 / svgRect.width;
+    const scaleY = 190 / svgRect.height;
+    const sx = ex * scaleX;
+    const sy = ey * scaleY;
+
+    let closestKey = null;
+    let minDist = Infinity;
+    for (const p of keyChart.curvePoints) {
+      const dist = Math.hypot(p.x - sx, p.y - sy);
+      if (dist < 40) {
+        if (dist < minDist) {
+          minDist = dist;
+          closestKey = p.key;
+        }
+      }
+    }
+    if (closestKey !== null) {
+      setDraggingKey(closestKey);
+      lastYRef.current = e.clientY;
+      e.currentTarget.setPointerCapture(e.pointerId);
+      e.preventDefault();
+    }
+  };
+
+  const handlePointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
+    if (draggingKey !== null && lastYRef.current !== null) {
+      const delta = -(e.clientY - lastYRef.current);
+      lastYRef.current = e.clientY;
+      if (delta === 0) return;
+      
+      const currentWeight = (safeValue.weights && typeof safeValue.weights[draggingKey] === 'number') 
+        ? safeValue.weights[draggingKey] 
+        : Math.pow(safeValue.bias, draggingKey - 1);
+        
+      const newWeight = currentWeight * Math.pow(1.03, delta);
+      
+      const nextWeights = { ...(safeValue.weights || {}) };
+      nextWeights[draggingKey] = Math.max(0.0001, Math.min(100.0, newWeight));
+      updateSettings({ weights: nextWeights });
+    }
+  };
+
+  const handlePointerUp = (e: React.PointerEvent<SVGSVGElement>) => {
+    if (draggingKey !== null) {
+      setDraggingKey(null);
+      lastYRef.current = null;
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    }
+  };
+
   const lengthCurve = useMemo(() => {
     const width = 520;
     const height = 190;
@@ -216,7 +274,10 @@ export function GenerationSettingsModal({ currentMovesCount, value, onChange, di
     <>
       <button
         className="generation-settings-toggle"
-        onClick={() => setIsOpen(true)}
+        onClick={() => {
+          setIsOpen(true);
+          onOpen?.();
+        }}
         type="button"
       >
         Customize
@@ -333,7 +394,7 @@ export function GenerationSettingsModal({ currentMovesCount, value, onChange, di
 
                 <div className="generation-control-card generation-control-card--wide">
                   <div className="generation-control-top">
-                    <label className="generation-control-label" htmlFor="gen-bias">Bias Toward Lower Keys</label>
+                    <label className="generation-control-label" htmlFor="gen-bias">Bias Toward Higher Keys</label>
                     <span className="generation-control-value">{safeValue.bias.toFixed(2)}</span>
                   </div>
                   <input
@@ -368,23 +429,46 @@ export function GenerationSettingsModal({ currentMovesCount, value, onChange, di
 
               <div className="generation-visual-grid">
                 <div className="generation-viz-card">
-                  <div className="generation-viz-header">
-                    <h4>Key Frequency Shape</h4>
-                    <p>Smooth trend over discrete key probabilities.</p>
+                  <div className="generation-viz-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div>
+                      <h4>Key Frequency Shape</h4>
+                      <p>Drag points on the graph to customize specific move frequencies.</p>
+                    </div>
+                    {safeValue.weights && Object.keys(safeValue.weights).length > 0 && (
+                      <button onClick={() => updateSettings({ weights: undefined })} style={{ fontSize: '0.7rem', padding: '0.3rem 0.6rem', background: '#333', border: '1px solid #444', borderRadius: '4px', cursor: 'pointer', color: '#fff' }}>Reset</button>
+                    )}
                   </div>
-                  <svg viewBox={`0 0 ${keyChart.width} ${keyChart.height}`} className="generation-viz-chart" role="img" aria-label="Key frequency visualization">
+                  <svg 
+                    viewBox={`0 0 ${keyChart.width} ${keyChart.height}`} 
+                    className="generation-viz-chart" 
+                    role="img" 
+                    aria-label="Key frequency visualization"
+                    onPointerDown={handlePointerDown}
+                    onPointerMove={handlePointerMove}
+                    onPointerUp={handlePointerUp}
+                    onPointerCancel={handlePointerUp}
+                    style={{ touchAction: 'none' }}
+                  >
                     {keyChart.fillPath && <path d={keyChart.fillPath} className="generation-viz-fill" />}
                     <path d={keyChart.smoothPath} className="generation-viz-line" />
                     {keyChart.curvePoints.map(point => (
-                      <text
-                        key={`lbl-${point.key}`}
-                        x={point.x}
-                        y={keyChart.topPad + keyChart.plotHeight + 18}
-                        className="generation-viz-axis"
-                        textAnchor="middle"
-                      >
-                        {point.key}
-                      </text>
+                      <g key={`lbl-${point.key}`}>
+                        <text
+                          x={point.x}
+                          y={keyChart.topPad + keyChart.plotHeight + 18}
+                          className="generation-viz-axis"
+                          textAnchor="middle"
+                        >
+                          {point.key}
+                        </text>
+                        <circle
+                          cx={point.x}
+                          cy={point.y}
+                          r={draggingKey === point.key ? 8 : 4}
+                          fill={draggingKey === point.key ? "#4CAF50" : "#ff7b54"}
+                          style={{ cursor: "ns-resize", transition: "r 0.1s ease" }}
+                        />
+                      </g>
                     ))}
                   </svg>
                   <div className="generation-stats-row">

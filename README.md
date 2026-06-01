@@ -9,28 +9,28 @@ A little coach to tell you what combinations to throw.
 Install dependencies:
 
 ```bash
-bun install
+npm install
 ```
 
 To start a development server (recommended):
 
 ```bash
-bun run dev
+npm run dev
 ```
 
 Or build first:
 
 ```bash
-bun run build
+npm run build
 ```
 
-Then run for production:
+Then preview production build:
 
 ```bash
-bun run start
+npm run preview
 ```
 
-This project was created using `bun init` in bun v1.3.6. [Bun](https://bun.com) is a fast all-in-one JavaScript runtime.
+This project uses standard npm scripts for local dev and builds.
 
 ## API (Cloudflare Worker)
 
@@ -41,7 +41,7 @@ The backend API lives in [worker/src/index.ts](worker/src/index.ts) and persists
 1. Install dependencies (repo root):
 
 ```bash
-bun install
+npm install
 ```
 
 1. Create a local Wrangler vars file:
@@ -53,7 +53,7 @@ copy worker\.dev.vars.example worker\.dev.vars
 1. Run the Worker locally:
 
 ```bash
-bun run api:dev
+npm run api:dev
 ```
 
 By default Wrangler serves at `http://127.0.0.1:8787`.
@@ -64,21 +64,21 @@ Point your frontend at it by setting `BUN_PUBLIC_API_BASE=http://127.0.0.1:8787`
 Login once:
 
 ```bash
-bunx wrangler login
+npx wrangler login
 ```
 
 Set secrets (do NOT commit them to git):
 
 ```bash
-bunx wrangler secret put TURSO_DATABASE_URL --config worker/wrangler.toml
-bunx wrangler secret put TURSO_AUTH_TOKEN --config worker/wrangler.toml
-bunx wrangler secret put SESSION_SECRET --config worker/wrangler.toml
+npx wrangler secret put TURSO_DATABASE_URL --config worker/wrangler.toml
+npx wrangler secret put TURSO_AUTH_TOKEN --config worker/wrangler.toml
+npx wrangler secret put SESSION_SECRET --config worker/wrangler.toml
 ```
 
 Deploy:
 
 ```bash
-bun run api:deploy
+npm run api:deploy
 ```
 
 ### Apply DB schema (Turso)
@@ -119,7 +119,7 @@ Also ensure the API Worker allows your frontend origin(s):
 To watch logs while you test:
 
 ```bash
-bun run api:tail
+npm run api:tail
 ```
 
 ### Custom domain (recommended)
@@ -136,4 +136,4 @@ cd voicegen
 python gen.py
 ```
 
-Make sure to install the edge-tts and other libraries (`run pip install -r requirements.txt`) before running the Python script.
+Make sure to install the edge-tts and other libraries (run `pip install -r requirements.txt`) before running the Python script.

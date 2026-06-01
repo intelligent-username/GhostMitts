@@ -1,5 +1,5 @@
 import { GenerationSettingsModal } from "./GenerationSettingsModal";
-import type { Move, PresetKey, GenerationSettings } from "../types";
+import type { Move, PresetKey, GenerationSettings, DisplayMode } from "../types";
 
 interface PresetsColumnProps {
   speed: number;
@@ -14,6 +14,13 @@ interface PresetsColumnProps {
   handleRemoveRow: (key: number) => void;
   handleAddRow: () => void;
   maxSlots: number;
+  displayMode: DisplayMode;
+  setDisplayMode: (mode: DisplayMode) => void;
+  useVoice: boolean;
+  setUseVoice: (val: boolean) => void;
+  customDisplayKeys: Set<number>;
+  setCustomDisplayKeys: (keys: Set<number>) => void;
+  onSettingsOpen?: () => void;
 }
 
 export function PresetsColumn({
@@ -29,6 +36,13 @@ export function PresetsColumn({
   handleRemoveRow,
   handleAddRow,
   maxSlots,
+  displayMode,
+  setDisplayMode,
+  useVoice,
+  setUseVoice,
+  customDisplayKeys,
+  setCustomDisplayKeys,
+  onSettingsOpen,
 }: PresetsColumnProps) {
   return (
     <div className="presets-col">
@@ -101,7 +115,7 @@ export function PresetsColumn({
             value={selectedPreset}
             onChange={(e) => onPresetChange(e.target.value as PresetKey)}
           >
-            {(["Boxing", "Kickboxing", "Muay Thai"] as PresetKey[]).map(name => (
+            {(["Boxing", "Kickboxing", "Muay Thai", "MMA"] as PresetKey[]).map(name => (
               <option key={name} value={name}>{name}</option>
             ))}
           </select>
@@ -155,6 +169,14 @@ export function PresetsColumn({
         currentMovesCount={currentMoves.length}
         value={generationSettings}
         onChange={onGenerationSettingsChange}
+        displayMode={displayMode}
+        setDisplayMode={setDisplayMode}
+        useVoice={useVoice}
+        setUseVoice={setUseVoice}
+        currentMoves={currentMoves}
+        customDisplayKeys={customDisplayKeys}
+        setCustomDisplayKeys={setCustomDisplayKeys}
+        onOpen={onSettingsOpen}
       />
     </div>
   );

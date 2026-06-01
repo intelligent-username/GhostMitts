@@ -9,10 +9,6 @@ interface LeftDisplayProps {
   totalPracticeSeconds: number;
   totalPracticeCombos: number;
   currentCombo: string;
-  showFullName: boolean;
-  setShowFullName: (val: boolean) => void;
-  useVoice: boolean;
-  setUseVoice: (val: boolean) => void;
   isMobile?: boolean;
   username: string | null;
   onStreakClick: () => void;
@@ -29,10 +25,6 @@ export function LeftDisplay({
   totalPracticeSeconds,
   totalPracticeCombos,
   currentCombo,
-  showFullName,
-  setShowFullName,
-  useVoice,
-  setUseVoice,
   isMobile = false,
   username,
   onStreakClick,
@@ -49,7 +41,7 @@ export function LeftDisplay({
 
   const renderContent = () => {
     if (mode === "time") {
-      if (!isTimerRunning && timeLeft === 0)
+      if (!isTimerRunning && timeLeft === 0 && !currentCombo)
         return isMobile ? null : <div className="idle-text">Ready</div>;
       return (
         <div className="display-wrapper">
@@ -61,7 +53,7 @@ export function LeftDisplay({
       );
     }
     // combos mode
-    if (!isCombosActive)
+    if (!isCombosActive && totalCombos === 0 && !currentCombo)
       return isMobile ? null : <div className="idle-text">Ready</div>;
     return (
       <div className="display-wrapper">
@@ -90,43 +82,10 @@ export function LeftDisplay({
     <div className="left-tab" onClick={onTabClick}>
       {renderContent()}
  
-      {/* Bottom bar container for toggles, title, and totals */}
+      {/* Bottom bar container for title and totals */}
       <div className="left-bottom-bar" onClick={e => e.stopPropagation()}>
-        <div className="bottom-toggles">
-          <label className="fullname-toggle">
-            <input
-              type="checkbox"
-              id="show-full-name"
-              checked={showFullName}
-              onChange={e => setShowFullName(e.target.checked)}
-            />
-            <span className="fullname-toggle-label">Display full name?</span>
-          </label>
-          <label className="fullname-toggle">
-            <input
-              type="checkbox"
-              id="use-voice"
-              checked={useVoice}
-              onChange={e => setUseVoice(e.target.checked)}
-            />
-            <span className="fullname-toggle-label">Use Voice?</span>
-          </label>
-        </div>
-
-        <div className="look-straight">LOOK STRAIGHT AHEAD!</div>
-
         <div className="practice-totals">
           {totalMins} min · {totalPracticeCombos} combos total
-          {username && (
-            <button
-              className="streak-header-btn"
-              onClick={onStreakClick}
-              title="View practice streak"
-              style={{ marginLeft: '0.6rem', width: '32px', height: '32px', fontSize: '1rem' }}
-            >
-              🔥
-            </button>
-          )}
         </div>
       </div>
     </div>

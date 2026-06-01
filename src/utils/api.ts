@@ -1,9 +1,8 @@
 import type { GenerationSettings, Move, PresetKey } from "../types";
 
 const API_BASE: string =
-  process.env.BUN_PUBLIC_API_BASE ??
-  (import.meta as any)?.env?.BUN_PUBLIC_API_BASE ??
-  (globalThis as any)?.BUN_PUBLIC_API_BASE ??
+  (typeof import.meta !== "undefined" && (import.meta as any).env ? ((import.meta as any).env.VITE_API_BASE || (import.meta as any).env.BUN_PUBLIC_API_BASE) : undefined) ??
+  (typeof globalThis !== "undefined" ? (globalThis as any).BUN_PUBLIC_API_BASE : undefined) ??
   "";
 
 async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {

@@ -41,6 +41,7 @@ export interface ComboOptions {
   length?: { min: number; max: number };
   bias?: number;
   lengthVariance?: number;
+  weights?: Record<number, number>;
 }
 
 function randInt(min: number, max: number): number {
@@ -68,8 +69,9 @@ export function generateCombo(opts: ComboOptions): number[] {
   const {
     moves,
     length = { min: 1, max: 20 },
-    bias = 0.65,
+    bias = 0.80,
     lengthVariance = 1,
+    weights,
   } = opts;
 
   const allKeys = moves.map(m => m.key);
@@ -89,7 +91,12 @@ export function generateCombo(opts: ComboOptions): number[] {
     lengthWeights.push({ value: len, weight });
   }
   const targetLen = weightedPick(lengthWeights);
-  const weightOf = (k: number) => Math.pow(bias, k - 1);
+  const weightOf = (k: number) => {
+    if (weights && typeof weights[k] === "number") {
+      return weights[k];
+    }
+    return Math.pow(bias, k - 1);
+  };
 
   const combo: number[] = [];
 

@@ -70,9 +70,10 @@
   text-transform: uppercase;
   letter-spacing: 1.5px;
   white-space: nowrap;
-  pointer-events: none;
-  text-align: right;
-  flex: 1;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .account-prompt {
@@ -91,26 +92,11 @@
   white-space: nowrap;
 }
 
-.bottom-toggles {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-  align-items: flex-start;
-}
-
 .left-bottom-bar {
   margin-top: auto;
   width: 100%;
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  align-items: start;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   padding: 0 1rem;
-}
-
-.left-bottom-bar > .look-straight {
-  margin-top: 0.15rem;
-}
-
-.left-bottom-bar > .practice-totals {
-  margin-top: 0.15rem;
 }

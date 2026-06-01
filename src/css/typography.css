@@ -43,17 +43,6 @@
   }
 }
 
-/*  Look Straight  */
-.look-straight {
-  font-size: clamp(0.65rem, 1.5vw, 1rem);
-  font-weight: 700;
-  letter-spacing: 3px;
-  color: #333;
-  text-transform: uppercase;
-  flex: 1;
-  text-align: center;
-}
-
 /*  Idle  */
 .idle-text {
   font-size: clamp(1.2rem, 3vw, 2rem);

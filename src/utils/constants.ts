@@ -6,7 +6,9 @@ export const FRONT_MOVES = [
   "OVERHAND LEFT",
   "LEAD KNEE",
   "FRONT KICK", "LEAD KICK", "LEAD TEEP", "TEEP", "CHECK KICK",
-  "BLOCK", "PARRY LEFT", "SLIP LEFT",
+  "BLOCK", "PARRY LEFT", "LEFT PARRY", "SHOOT A TAKEDOWN", "SLIP LEFT",
+  "SWITCH KICK",
+  "LEFT ELBOW",
 ];
 
 export const REAR_MOVES = [
@@ -15,7 +17,9 @@ export const REAR_MOVES = [
   "REAR KNEE",
   "REAR KICK", "BODY KICK", "ROUNDHOUSE KICK",
   "REAR TEEP", "LOW KICK", "HEAD KICK",
-  "PARRY RIGHT", "SLIP RIGHT",
+  "PARRY RIGHT", "RIGHT PARRY", "SPRAWL", "SLIP RIGHT",
+  "SPINNING ELBOW",
+  "RIGHT ELBOW",
 ];
 
 export const NUMBER_WORDS: Record<number, string> = {
@@ -60,7 +64,15 @@ export const MOVE_AUDIO_MAP: Record<string, string> = {
   "PARRY LEFT": "n36_PARRY_LEFT.ogg",
   "PARRY RIGHT": "n37_PARRY_RIGHT.ogg",
   "SLIP LEFT": "n38_SLIP_LEFT.ogg",
-  "SLIP RIGHT": "n39_SLIP_RIGHT.ogg"
+  "SLIP RIGHT": "n39_SLIP_RIGHT.ogg",
+  "SHOOT A TAKEDOWN": "n40_SHOOT_A_TAKEDOWN.ogg",
+  "SPRAWL": "n41_SPRAWL.ogg",
+  "LEFT PARRY": "n42_LEFT_PARRY.ogg",
+  "RIGHT PARRY": "n43_RIGHT_PARRY.ogg",
+  "SPINNING ELBOW": "n44_SPINNING_ELBOW.ogg",
+  "SWITCH KICK": "n45_SWITCH_KICK.ogg",
+  "LEFT ELBOW": "n46_LEFT_ELBOW.ogg",
+  "RIGHT ELBOW": "n47_RIGHT_ELBOW.ogg"
 };
 
 export const BASE_PUNCHES: Move[] = [
@@ -72,21 +84,57 @@ export const BASE_PUNCHES: Move[] = [
   { key: 6, name: "REAR UPPERCUT",  locked: true },
 ];
 
-export const MAX_SLOTS = 16;
+export const MAX_SLOTS = 20;
 
 export const DEFAULT_PRESETS: Record<PresetKey, Move[]> = {
   Boxing: [...BASE_PUNCHES],
   Kickboxing: [
-    ...BASE_PUNCHES,
-    { key: 7, name: "FRONT KICK", locked: false },
-    { key: 8, name: "REAR KICK",  locked: false },
-  ],
-  "Muay Thai": [
-    ...BASE_PUNCHES,
+    { key: 1, name: "JAB",            locked: true },
+    { key: 2, name: "CROSS",          locked: true },
+    { key: 3, name: "FRONT HOOK",     locked: true },
+    { key: 4, name: "CHECK KICK",     locked: true },
+    { key: 5, name: "FRONT UPPERCUT", locked: true },
+    { key: 6, name: "REAR UPPERCUT",  locked: true },
     { key: 7,  name: "LEAD TEEP",       locked: false },
-    { key: 8,  name: "REAR TEEP",       locked: false },
+    { key: 8,  name: "REAR KICK",       locked: false },
     { key: 9,  name: "ROUNDHOUSE KICK", locked: false },
     { key: 10, name: "LOW KICK",        locked: false },
+  ],
+  "Muay Thai": [
+    { key: 1, name: "JAB",            locked: true },
+    { key: 2, name: "CROSS",          locked: true },
+    { key: 3, name: "FRONT HOOK",     locked: true },
+    { key: 4, name: "CHECK KICK",     locked: true },
+    { key: 5, name: "FRONT UPPERCUT", locked: true },
+    { key: 6, name: "REAR UPPERCUT",  locked: true },
+    { key: 7,  name: "LEAD TEEP",       locked: false },
+    { key: 8,  name: "REAR KICK",       locked: false },
+    { key: 9,  name: "ROUNDHOUSE KICK", locked: false },
+    { key: 10, name: "LOW KICK",        locked: false },
+    { key: 11, name: "LEAD KNEE",       locked: false },
+    { key: 12, name: "REAR KNEE",       locked: false },
+    { key: 13, name: "LEFT ELBOW",      locked: false },
+    { key: 14, name: "RIGHT ELBOW",     locked: false },
+  ],
+  MMA: [
+    { key: 1,  name: "JAB",              locked: true },
+    { key: 2,  name: "CROSS",            locked: true },
+    { key: 3,  name: "FRONT HOOK",       locked: true },
+    { key: 4,  name: "CHECK KICK",       locked: true },
+    { key: 5,  name: "FRONT UPPERCUT",   locked: true },
+    { key: 6,  name: "REAR UPPERCUT",    locked: true },
+    { key: 7,  name: "LEAD TEEP",        locked: false },
+    { key: 8,  name: "REAR KICK",        locked: false },
+    { key: 9,  name: "ROUNDHOUSE KICK",  locked: false },
+    { key: 10, name: "LOW KICK",         locked: false },
+    { key: 11, name: "LEAD KNEE",        locked: false },
+    { key: 12, name: "REAR KNEE",        locked: false },
+    { key: 13, name: "LEFT ELBOW",       locked: false },
+    { key: 14, name: "RIGHT ELBOW",      locked: false },
+    { key: 15, name: "SHOOT A TAKEDOWN", locked: false },
+    { key: 16, name: "SPRAWL",           locked: false },
+    { key: 17, name: "LEFT PARRY",       locked: false },
+    { key: 18, name: "RIGHT PARRY",      locked: false },
   ],
 };
 

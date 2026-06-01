@@ -55,9 +55,11 @@ export function AuthPanel({ username, isBusy, apiConnected, onLogin, onRegister,
         </button>
       )}
 
-      <div className={`auth-connection ${apiConnected === true ? "ok" : apiConnected === false ? "down" : "pending"}`}>
-        {apiConnected === null ? "Checking API..." : apiConnected ? "Accounts Ready" : "Accounts Offline"}
-      </div>
+      {!username && (
+        <div className={`auth-connection ${apiConnected === true ? "ok" : apiConnected === false ? "down" : "pending"}`}>
+          {apiConnected === null ? "Checking API..." : apiConnected ? "Accounts Ready" : "Accounts Offline"}
+        </div>
+      )}
 
       {isOpen && (
         <div className="auth-modal-backdrop" onClick={() => setIsOpen(false)}>

@@ -4,11 +4,12 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "bun --hot src/index.ts",
-    "build": "bun build ./src/index.html --outdir=dist --sourcemap --target=browser --minify --define:process.env.NODE_ENV='\"production\"' --define:BUN_PUBLIC_API_BASE='\"https://ghostmitts-api.varakt-dev.workers.dev\"' --env='BUN_PUBLIC_*'",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
     "start": "NODE_ENV=production bun src/index.ts",
     "deploy": "wrangler deploy",
-    "preview": "wrangler dev",
+    "preview:worker": "wrangler dev",
     "api:dev": "bunx wrangler dev --config worker/wrangler.toml",
     "api:deploy": "bunx wrangler deploy --config worker/wrangler.toml",
     "api:tail": "bunx wrangler tail --config worker/wrangler.toml"
@@ -22,6 +23,10 @@
   "devDependencies": {
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "@vitejs/plugin-react": "^4.7.0",
+    "sirv": "^3.0.1",
+    "vite": "^7.0.0",
+    "vite-plugin-static-copy": "^3.1.0"
   }
 }

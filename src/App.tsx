@@ -14,13 +14,13 @@ import { ControlsColumn } from "./components/ControlsColumn";
 import { PresetsColumn } from "./components/PresetsColumn";
 import { AuthPanel } from "./components/AuthPanel";
 import { StreakGridModal } from "./components/StreakGridModal";
-import type { Move, PresetKey, GenerationSettings } from "./types";
+import type { Move, PresetKey, GenerationSettings, DisplayMode } from "./types";
 import { DEFAULT_PRESETS, MAX_SLOTS, movesForSlot } from "./utils/constants";
 import { loadTotalSeconds, loadTotalCombos, saveTotalSeconds, saveTotalCombos, loadGenSettings, saveGenSettings } from "./utils/storage";
 import { useAudioSequencer } from "./hooks/useAudioSequencer";
 import { getBootstrap, getMe, insertWorkout, loginAccount, logoutAccount, registerAccount, upsertDailySession, upsertPreset } from "./utils/api";
 
-const DEFAULT_GENERATION_SETTINGS: GenerationSettings = { min: 1, max: 20, bias: 0.65, lengthVariance: 1 };
+const DEFAULT_GENERATION_SETTINGS: GenerationSettings = { min: 1, max: 20, bias: 0.80, lengthVariance: 1 };
 
 function isDefaultGenerationSettings(s: GenerationSettings): boolean {
   return (
@@ -71,30 +71,22 @@ export function App() {
     Boxing:     [...DEFAULT_PRESETS.Boxing],
     Kickboxing: [...DEFAULT_PRESETS.Kickboxing],
     "Muay Thai": [...DEFAULT_PRESETS["Muay Thai"]],
+    MMA: [...DEFAULT_PRESETS.MMA],
   });
+
+  const [generationSettingsMap, setGenerationSettingsMap] = useState<Record<PresetKey, GenerationSettings>>({
+    Boxing: { ...DEFAULT_GENERATION_SETTINGS },
+    Kickboxing: { ...DEFAULT_GENERATION_SETTINGS },
+    "Muay Thai": { ...DEFAULT_GENERATION_SETTINGS },
+    MMA: { ...DEFAULT_GENERATION_SETTINGS },
+  });
+
+  const generationSettings = generationSettingsMap[selectedPreset];
 
   const [timeInputMin, setTimeInputMin] = useState<string>("3");
   const [timeInputSec, setTimeInputSec] = useState<string>("0");
   const [comboInput, setComboInput]     = useState<string>("10");
   const [speed, setSpeed]               = useState<number>(3000);
-  const [generationSettings, setGenerationSettings] = useState<GenerationSettings>(() => {
-    const defaults: GenerationSettings = DEFAULT_GENERATION_SETTINGS;
-    const saved = loadGenSettings();
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved) as Partial<GenerationSettings>;
-        if (parsed && typeof parsed === "object") {
-          return {
-            min: typeof parsed.min === "number" ? parsed.min : defaults.min,
-            max: typeof parsed.max === "number" ? parsed.max : defaults.max,
-            bias: typeof parsed.bias === "number" ? parsed.bias : defaults.bias,
-            lengthVariance: typeof parsed.lengthVariance === "number" ? parsed.lengthVariance : defaults.lengthVariance,
-          };
-        }
-      } catch {}
-    }
-    return defaults;
-  });
 
   // Timer / combo run state
   const [isTimerRunning, setIsTimerRunning] = useState(false);
@@ -106,13 +98,18 @@ export function App() {
   const [username, setUsername]               = useState<string | null>(null);
   const [authBusy, setAuthBusy]               = useState<boolean>(false);
   const [apiConnected, setApiConnected]       = useState<boolean | null>(null);
+  const [isBootstrapped, setIsBootstrapped]   = useState(false);
 
   const speedRef = useRef<number>(3000);
 
   // Display options
-  const [showFullName, setShowFullName] = useState<boolean>(false);
-  const showFullNameRef = useRef<boolean>(false);
-  useEffect(() => { showFullNameRef.current = showFullName; }, [showFullName]);
+  const [displayMode, setDisplayMode] = useState<DisplayMode>("numbers");
+  const displayModeRef = useRef<DisplayMode>("numbers");
+  useEffect(() => { displayModeRef.current = displayMode; }, [displayMode]);
+
+  const [customDisplayKeys, setCustomDisplayKeys] = useState<Set<number>>(new Set());
+  const customDisplayKeysRef = useRef<Set<number>>(new Set());
+  useEffect(() => { customDisplayKeysRef.current = customDisplayKeys; }, [customDisplayKeys]);
 
   const [useVoice, setUseVoice] = useState<boolean>(true);
   const useVoiceRef = useRef<boolean>(true);
@@ -130,6 +127,7 @@ export function App() {
   const usernameRef = useRef<string | null>(null);
   const selectedPresetRef = useRef<PresetKey>(selectedPreset);
   const currentMovesRef = useRef<Move[]>(customMoves[selectedPreset]);
+  const customMovesRef = useRef<Record<PresetKey, Move[]>>(customMoves);
   const generationSettingsRef = useRef<GenerationSettings>(generationSettings);
   const totalPracticeSecondsRef = useRef<number>(totalPracticeSeconds);
   const totalPracticeCombosRef = useRef<number>(totalPracticeCombos);
@@ -138,6 +136,7 @@ export function App() {
   useEffect(() => { usernameRef.current = username; }, [username]);
   useEffect(() => { selectedPresetRef.current = selectedPreset; }, [selectedPreset]);
   useEffect(() => { currentMovesRef.current = customMoves[selectedPreset]; }, [customMoves, selectedPreset]);
+  useEffect(() => { customMovesRef.current = customMoves; }, [customMoves]);
   useEffect(() => { generationSettingsRef.current = generationSettings; }, [generationSettings]);
   useEffect(() => { totalPracticeSecondsRef.current = totalPracticeSeconds; }, [totalPracticeSeconds]);
   useEffect(() => { totalPracticeCombosRef.current = totalPracticeCombos; }, [totalPracticeCombos]);
@@ -180,7 +179,7 @@ export function App() {
 
             const presetMap = new Map<PresetKey, { moves?: Move[]; generationSettings?: GenerationSettings }>();
             for (const p of boot.presets) {
-              if (p.preset_name === "Boxing" || p.preset_name === "Kickboxing" || p.preset_name === "Muay Thai") {
+              if (p.preset_name === "Boxing" || p.preset_name === "Kickboxing" || p.preset_name === "Muay Thai" || p.preset_name === "MMA") {
                 const data = p.preset_data as any;
                 presetMap.set(p.preset_name, {
                   moves: Array.isArray(data?.moves) ? data.moves : undefined,
@@ -200,14 +199,23 @@ export function App() {
                 return next;
               });
 
-              const current = presetMap.get(selectedPresetRef.current);
-              if (current?.generationSettings && typeof current.generationSettings === "object") {
-                setGenerationSettings(current.generationSettings);
-              }
+              setGenerationSettingsMap(prev => {
+                const next = { ...prev };
+                for (const [key, val] of presetMap.entries()) {
+                  if (val.generationSettings && typeof val.generationSettings === "object") {
+                    next[key] = val.generationSettings as GenerationSettings;
+                  }
+                }
+                return next;
+              });
             }
+            if (mounted) setIsBootstrapped(true);
           } catch {
             // Ignore bootstrap failures (API reachable but user data unavailable)
+            if (mounted) setIsBootstrapped(true);
           }
+        } else {
+          if (mounted) setIsBootstrapped(true);
         }
       } catch {
         if (mounted) {
@@ -259,6 +267,17 @@ export function App() {
 
     const combosDelta = Math.max(0, combosCompletedRef.current - activeWorkoutCombosStartRef.current);
     const durationSeconds = Math.max(0, Math.round((endMs - startMs) / 1000));
+
+    const nextSec = totalPracticeSecondsRef.current + durationSeconds;
+    const nextCombos = totalPracticeCombosRef.current + combosDelta;
+
+    if (combosDelta > 0 || durationSeconds > 0) {
+      setTotalPracticeCombos(nextCombos);
+      setTotalPracticeSeconds(nextSec);
+      if (reason !== "unload") {
+        triggerCloudSessionSave(nextSec, nextCombos);
+      }
+    }
 
     if (combosDelta === 0 && durationSeconds === 0) return;
 
@@ -317,13 +336,6 @@ export function App() {
       // Timer finished
       endWorkoutSegment("complete");
       setIsTimerRunning(false);
-      const nextSeconds = totalPracticeSecondsRef.current + currentTimerDuration.current;
-      const nextCombos = totalPracticeCombosRef.current + combosCompletedRef.current;
-      setTotalPracticeSeconds(nextSeconds);
-      if (combosCompletedRef.current > 0) {
-        setTotalPracticeCombos(nextCombos);
-      }
-      triggerCloudSessionSave(nextSeconds, nextCombos);
     }
     return () => { if (timerRef.current) clearTimeout(timerRef.current); };
   }, [isTimerRunning, timeLeft, endWorkoutSegment]);
@@ -347,19 +359,24 @@ export function App() {
   );
 
   // Build a display string from a combo (array of keys)
-  const comboToString = useCallback((keys: number[]) =>
-    keys
-      .map(k => showFullNameRef.current
-        ? (currentMoves.find(m => m.key === k)?.name ?? String(k))
-        : String(k))
-      .join(" · "),
-    [currentMoves]
-  );
+  const comboToString = useCallback((keys: number[]) => {
+    const mode = displayModeRef.current;
+    const customKeys = customDisplayKeysRef.current;
+    return keys
+      .map(k => {
+        const useName = mode === "fullname" || (mode === "custom" && customKeys.has(k));
+        return useName
+          ? (currentMoves.find(m => m.key === k)?.name ?? String(k))
+          : String(k);
+      })
+      .join(" · ");
+  }, [currentMoves]);
 
   // ── audio sequencer & multi-processor ────────────────────────────────────
   const { playComboAudio, stopAudio } = useAudioSequencer({
     useVoiceRef,
-    showFullNameRef,
+    displayModeRef,
+    customDisplayKeysRef,
     currentMoves,
   });
 
@@ -393,13 +410,6 @@ export function App() {
         if (mode === "combos") {
           endWorkoutSegment("complete");
           setIsCombosActive(false);
-          // Calculate final elapsed time
-          const elapsed = Math.round((Date.now() - sessionStartMs.current) / 1000);
-          const nextSec = totalPracticeSecondsRef.current + Math.max(0, elapsed);
-          const nextCombos = totalPracticeCombosRef.current + limit;
-          setTotalPracticeSeconds(nextSec);
-          setTotalPracticeCombos(nextCombos);
-          triggerCloudSessionSave(nextSec, nextCombos);
         }
         return;
       }
@@ -417,12 +427,6 @@ export function App() {
       setCombosCompleted(prev => {
         const next = prev + 1;
         combosCompletedRef.current = next;
-        
-        // If we hit the limit in Time mode, we finalize the combo total immediately
-        if (mode === "time" && limit > 0 && next >= limit) {
-          setTotalPracticeCombos(p => p + next);
-        }
-        
         return next;
       });
     };
@@ -444,21 +448,28 @@ export function App() {
   }, [generationSettings]);
 
   // Auto-save presets to cloud when moves or generation settings change (debounced)
-  useEffect(() => {
-    if (!username) return; // must be logged in
-    const preset = selectedPreset;
-    const moves = customMoves[preset];
-    const gen = generationSettings;
+  const presetSaveTimersRef = useRef<Map<PresetKey, number>>(new Map());
 
-    const timer = setTimeout(() => {
+  const schedulePresetSave = useCallback((preset: PresetKey, moves: Move[], gen: GenerationSettings) => {
+    if (!username) return;
+    const timers = presetSaveTimersRef.current;
+    const existing = timers.get(preset);
+    if (existing) window.clearTimeout(existing);
+    const timer = window.setTimeout(() => {
       void upsertPreset({
         preset_name: preset,
         preset_data: { moves, generationSettings: gen, frequencies: [] },
       }).catch(() => {});
-    }, 2000);
+      timers.delete(preset);
+    }, 1500);
+    timers.set(preset, timer);
+  }, [username]);
 
-    return () => clearTimeout(timer);
-  }, [customMoves, generationSettings, selectedPreset, username]);
+  useEffect(() => {
+    if (!username || !isBootstrapped) return;
+    const preset = selectedPreset;
+    schedulePresetSave(preset, customMoves[preset], generationSettingsMap[preset]);
+  }, [customMoves, generationSettingsMap, selectedPreset, username, isBootstrapped, schedulePresetSave]);
 
   const handleAddRow = () => {
     if (currentMoves.length >= MAX_SLOTS) return;
@@ -496,6 +507,7 @@ export function App() {
         if (boot.streak !== undefined) setStreak(boot.streak);
         if (boot.activeDates) setActiveDates(boot.activeDates);
       } catch {}
+      setIsBootstrapped(true);
     } finally {
       setAuthBusy(false);
     }
@@ -519,7 +531,7 @@ export function App() {
 
         const presetMap = new Map<PresetKey, { moves?: Move[]; generationSettings?: GenerationSettings }>();
         for (const p of boot.presets) {
-          if (p.preset_name === "Boxing" || p.preset_name === "Kickboxing" || p.preset_name === "Muay Thai") {
+          if (p.preset_name === "Boxing" || p.preset_name === "Kickboxing" || p.preset_name === "Muay Thai" || p.preset_name === "MMA") {
             const data = p.preset_data as any;
             presetMap.set(p.preset_name, {
               moves: Array.isArray(data?.moves) ? data.moves : undefined,
@@ -539,12 +551,18 @@ export function App() {
             return next;
           });
 
-          const current = presetMap.get(selectedPresetRef.current);
-          if (current?.generationSettings && typeof current.generationSettings === "object") {
-            setGenerationSettings(current.generationSettings);
-          }
+          setGenerationSettingsMap(prev => {
+            const next = { ...prev };
+            for (const [key, val] of presetMap.entries()) {
+              if (val.generationSettings && typeof val.generationSettings === "object") {
+                next[key] = val.generationSettings as GenerationSettings;
+              }
+            }
+            return next;
+          });
         }
       } catch {}
+      setIsBootstrapped(true);
     } finally {
       setAuthBusy(false);
     }
@@ -559,6 +577,20 @@ export function App() {
       setStreak(0);
       setActiveDates([]);
       setApiConnected(true);
+      setCustomMoves({
+        Boxing: [...DEFAULT_PRESETS["Boxing"]],
+        Kickboxing: [...DEFAULT_PRESETS["Kickboxing"]],
+        "Muay Thai": [...DEFAULT_PRESETS["Muay Thai"]],
+        MMA: [...DEFAULT_PRESETS["MMA"]],
+      });
+      setGenerationSettingsMap({
+        Boxing: { ...DEFAULT_GENERATION_SETTINGS },
+        Kickboxing: { ...DEFAULT_GENERATION_SETTINGS },
+        "Muay Thai": { ...DEFAULT_GENERATION_SETTINGS },
+        MMA: { ...DEFAULT_GENERATION_SETTINGS },
+      });
+      setTotalPracticeSeconds(0);
+      setTotalPracticeCombos(0);
     } finally {
       setAuthBusy(false);
     }
@@ -578,12 +610,10 @@ export function App() {
     const seconds = totalPracticeSecondsRef.current;
     const combos = totalPracticeCombosRef.current;
     const preset = selectedPresetRef.current;
-    const moves = currentMovesRef.current;
     const gen = generationSettingsRef.current;
 
     const totalsNonDefault = seconds > 0 || combos > 0;
     const genNonDefault = !isDefaultGenerationSettings(gen);
-    const movesNonDefault = !areMovesEqual(moves, DEFAULT_PRESETS[preset]);
 
     // Only save if there is something meaningfully non-default.
     if (!totalsNonDefault && !genNonDefault && !movesNonDefault) return;
@@ -597,11 +627,13 @@ export function App() {
       ).catch(() => {});
     }
 
-    if (genNonDefault || movesNonDefault) {
-      const rearKickNames = new Set([
-        "REAR KICK", "REAR TEEP", "BODY KICK", "ROUNDHOUSE KICK", "LOW KICK", "HEAD KICK",
-      ]);
+    const rearKickNames = new Set([
+      "REAR KICK", "REAR TEEP", "BODY KICK", "ROUNDHOUSE KICK", "LOW KICK", "HEAD KICK",
+    ]);
 
+    const persistPreset = (presetKey: PresetKey, moves: Move[]) => {
+      const movesNonDefault = !areMovesEqual(moves, DEFAULT_PRESETS[presetKey]);
+      if (!genNonDefault && !movesNonDefault) return;
       const frequencies = moves.map((move) => {
         let weight = Math.pow(gen.bias, move.key - 1);
         if (rearKickNames.has(move.name.toUpperCase())) {
@@ -609,14 +641,19 @@ export function App() {
         }
         return { key: move.key, weight };
       });
-
       void upsertPreset(
         {
-          preset_name: preset,
+          preset_name: presetKey,
           preset_data: { moves, generationSettings: gen, frequencies },
         },
         { keepalive: true }
       ).catch(() => {});
+    };
+
+    const allPresets = Object.keys(customMovesRef.current) as PresetKey[];
+    for (const key of allPresets) {
+      const moves = customMovesRef.current[key];
+      if (moves) persistPreset(key, moves);
     }
   }, [endWorkoutSegment]);
 
@@ -685,14 +722,9 @@ export function App() {
     if (mode === "time") {
       endWorkoutSegment("pause");
       setIsTimerRunning(false);
-      triggerCloudSessionSave();
     } else if (isCombosActive) {
-      setIsCombosActive(false);
-      const elapsed = Math.round((Date.now() - sessionStartMs.current) / 1000);
-      const nextSec = totalPracticeSecondsRef.current + Math.max(0, elapsed);
-      setTotalPracticeSeconds(nextSec);
       endWorkoutSegment("pause");
-      triggerCloudSessionSave(nextSec, totalPracticeCombos);
+      setIsCombosActive(false);
     }
   };
 
@@ -706,7 +738,6 @@ export function App() {
     setTotalCombos(0);
     totalCombosRef.current = 0;
     setCurrentCombo("");
-    triggerCloudSessionSave();
   };
 
   //  Render
@@ -718,14 +749,18 @@ export function App() {
     return (
       <div className="app-container mobile-container">
         <div className="mobile-header">
-          <h1 className="ghost-mitts-title-h1">GhostMitts</h1>
           <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center' }}>
             {username && (
-              <button className="streak-header-btn" onClick={() => setShowStreakModal(true)} title="View practice streak">
-                🔥
+              <button className="streak-header-btn" onClick={() => { handlePause(); setShowStreakModal(true); }} title="View practice streak">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" width="22" height="22">
+                  <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" />
+                </svg>
               </button>
             )}
-            <button className="settings-toggle-btn" onClick={() => setShowSettings(true)}>
+            <h1 className="ghost-mitts-title-h1">GhostMitts</h1>
+          </div>
+          <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center' }}>
+            <button className="settings-toggle-btn" onClick={() => { handlePause(); setShowSettings(true); }}>
               <SettingsIcon />
             </button>
           </div>
@@ -744,13 +779,9 @@ export function App() {
             totalPracticeSeconds={totalPracticeSeconds}
             totalPracticeCombos={totalPracticeCombos}
             currentCombo={currentCombo}
-            showFullName={showFullName}
-            setShowFullName={setShowFullName}
-            useVoice={useVoice}
-            setUseVoice={setUseVoice}
             isMobile={true}
             username={username}
-            onStreakClick={() => setShowStreakModal(true)}
+            onStreakClick={() => { handlePause(); setShowStreakModal(true); }}
           />
         )}
 
@@ -795,28 +826,6 @@ export function App() {
               </div>
 
               <div className="mobile-settings-body">
-                {/* Voice & Full Name Toggles */}
-                <div className="mobile-settings-toggles">
-                  <label className="fullname-toggle">
-                    <input
-                      type="checkbox"
-                      id="show-full-name-mobile"
-                      checked={showFullName}
-                      onChange={e => setShowFullName(e.target.checked)}
-                    />
-                    <span className="fullname-toggle-label">Display full name?</span>
-                  </label>
-                  <label className="fullname-toggle">
-                    <input
-                      type="checkbox"
-                      id="use-voice-mobile"
-                      checked={useVoice}
-                      onChange={e => setUseVoice(e.target.checked)}
-                    />
-                    <span className="fullname-toggle-label">Use Voice?</span>
-                  </label>
-                </div>
-
                 {/* Presets and custom move configs */}
                 <PresetsColumn
                   speed={speed}
@@ -825,25 +834,21 @@ export function App() {
                   onPresetChange={handlePresetChange}
                   currentMoves={currentMoves}
                   generationSettings={generationSettings}
-                  onGenerationSettingsChange={setGenerationSettings}
+                  onGenerationSettingsChange={(next) => setGenerationSettingsMap(prev => ({ ...prev, [selectedPreset]: next }))}
                   optionsFor={optionsFor}
                   handleChangeName={handleChangeName}
                   handleRemoveRow={handleRemoveRow}
                   handleAddRow={handleAddRow}
                   maxSlots={MAX_SLOTS}
+                  displayMode={displayMode}
+                  setDisplayMode={setDisplayMode}
+                  useVoice={useVoice}
+                  setUseVoice={setUseVoice}
+                  customDisplayKeys={customDisplayKeys}
+                  setCustomDisplayKeys={setCustomDisplayKeys}
+                  onSettingsOpen={handlePause}
                 />
 
-                {/* Auth Panel for Cloud Save */}
-                <div className="mobile-auth-wrapper">
-                  <AuthPanel
-                    username={username}
-                    isBusy={authBusy}
-                    apiConnected={apiConnected}
-                    onLogin={handleLogin}
-                    onRegister={handleRegister}
-                    onLogout={handleLogout}
-                  />
-                </div>
               </div>
             </div>
           </div>
@@ -862,6 +867,19 @@ export function App() {
   // Desktop/Tablet default view
   return (
     <div className="app-container">
+      {username && (
+        <div style={{ position: 'absolute', top: '2.5rem', left: '2.5rem', zIndex: 100 }}>
+          <button
+            className="streak-header-btn"
+            onClick={() => { handlePause(); setShowStreakModal(true); }}
+            title="View practice streak"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" width="26" height="26">
+              <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" />
+            </svg>
+          </button>
+        </div>
+      )}
       <div className="title-ghost">Ghost</div>
       <div className="title-mitts">Mitts</div>
 
@@ -877,13 +895,9 @@ export function App() {
         totalPracticeSeconds={totalPracticeSeconds}
         totalPracticeCombos={totalPracticeCombos}
         currentCombo={currentCombo}
-        showFullName={showFullName}
-        setShowFullName={setShowFullName}
-        useVoice={useVoice}
-        setUseVoice={setUseVoice}
         isMobile={false}
         username={username}
-        onStreakClick={() => setShowStreakModal(true)}
+        onStreakClick={() => { handlePause(); setShowStreakModal(true); }}
       />
 
       {/* RIGHT has two columns: controls & presets */}
@@ -921,12 +935,19 @@ export function App() {
           onPresetChange={handlePresetChange}
           currentMoves={currentMoves}
           generationSettings={generationSettings}
-          onGenerationSettingsChange={setGenerationSettings}
+          onGenerationSettingsChange={(next) => setGenerationSettingsMap(prev => ({ ...prev, [selectedPreset]: next }))}
           optionsFor={optionsFor}
           handleChangeName={handleChangeName}
           handleRemoveRow={handleRemoveRow}
           handleAddRow={handleAddRow}
           maxSlots={MAX_SLOTS}
+          displayMode={displayMode}
+          setDisplayMode={setDisplayMode}
+          useVoice={useVoice}
+          setUseVoice={setUseVoice}
+          customDisplayKeys={customDisplayKeys}
+          setCustomDisplayKeys={setCustomDisplayKeys}
+          onSettingsOpen={handlePause}
         />
 
       </div>
