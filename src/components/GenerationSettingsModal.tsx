@@ -20,7 +20,7 @@ function clampSettings(settings: GenerationSettings): GenerationSettings {
   const max = Math.max(min, Math.min(Math.floor(settings.max), 20));
   const bias = Math.max(0.3, Math.min(0.95, settings.bias));
   const lengthVariance = Math.max(0.1, Math.min(3.0, settings.lengthVariance));
-  return { min, max, bias, lengthVariance };
+  return { min, max, bias, lengthVariance, weights: settings.weights };
 }
 
 function buildSmoothPath(points: Array<{ x: number; y: number }>): string {
@@ -94,6 +94,9 @@ export function GenerationSettingsModal({ currentMovesCount, value, onChange, di
         const weights: { k: number; w: number }[] = [];
         for (const k of candidates) {
           let w = Math.pow(safeValue.bias, k - 1);
+          if (safeValue.weights && typeof safeValue.weights[k] === "number") {
+            w *= safeValue.weights[k]!;
+          }
           // Rear kick boost (approximate)
           if (k % 2 === 0) w *= 1.25;
           weights.push({ k, w });
@@ -130,7 +133,7 @@ export function GenerationSettingsModal({ currentMovesCount, value, onChange, di
     const oddMass = probs.filter(item => item.key % 2 === 1).reduce((sum, item) => sum + item.prob, 0);
 
     return { probs, mean, variance, oddMass, evenMass: 1 - oddMass };
-  }, [currentMovesCount, safeValue.bias]);
+  }, [currentMovesCount, safeValue.bias, safeValue.weights]);
 
   const lengthDistribution = useMemo(() => {
     // Gaussian distribution centered at midpoint with variance control
@@ -183,33 +186,15 @@ export function GenerationSettingsModal({ currentMovesCount, value, onChange, di
     return { width, height, leftPad, topPad, plotHeight, curvePoints, smoothPath, fillPath };
   }, [keyDistribution.probs]);
 
-  const handlePointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
-    const svgRect = e.currentTarget.getBoundingClientRect();
-    const ex = e.clientX - svgRect.left;
-    const ey = e.clientY - svgRect.top;
-    
-    const scaleX = 520 / svgRect.width;
-    const scaleY = 190 / svgRect.height;
-    const sx = ex * scaleX;
-    const sy = ey * scaleY;
-
-    let closestKey = null;
-    let minDist = Infinity;
-    for (const p of keyChart.curvePoints) {
-      const dist = Math.hypot(p.x - sx, p.y - sy);
-      if (dist < 40) {
-        if (dist < minDist) {
-          minDist = dist;
-          closestKey = p.key;
-        }
-      }
-    }
-    if (closestKey !== null) {
-      setDraggingKey(closestKey);
-      lastYRef.current = e.clientY;
-      e.currentTarget.setPointerCapture(e.pointerId);
-      e.preventDefault();
-    }
+  const handlePointerDown = (key: number, e: React.PointerEvent<SVGElement>) => {
+    setDraggingKey(key);
+    lastYRef.current = e.clientY;
+    const svg = e.currentTarget.ownerSVGElement || e.currentTarget;
+    try {
+      svg.setPointerCapture(e.pointerId);
+    } catch {}
+    e.stopPropagation();
+    e.preventDefault();
   };
 
   const handlePointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
@@ -219,13 +204,13 @@ export function GenerationSettingsModal({ currentMovesCount, value, onChange, di
       if (delta === 0) return;
       
       const currentWeight = (safeValue.weights && typeof safeValue.weights[draggingKey] === 'number') 
-        ? safeValue.weights[draggingKey] 
+        ? safeValue.weights[draggingKey]!
         : Math.pow(safeValue.bias, draggingKey - 1);
         
-      const newWeight = currentWeight * Math.pow(1.03, delta);
+      const newWeight = currentWeight * Math.pow(1.04, delta);
       
       const nextWeights = { ...(safeValue.weights || {}) };
-      nextWeights[draggingKey] = Math.max(0.0001, Math.min(100.0, newWeight));
+      nextWeights[draggingKey] = Math.max(0.001, Math.min(100.0, newWeight));
       updateSettings({ weights: nextWeights });
     }
   };
@@ -234,7 +219,9 @@ export function GenerationSettingsModal({ currentMovesCount, value, onChange, di
     if (draggingKey !== null) {
       setDraggingKey(null);
       lastYRef.current = null;
-      e.currentTarget.releasePointerCapture(e.pointerId);
+      try {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      } catch {}
     }
   };
 
@@ -443,33 +430,94 @@ export function GenerationSettingsModal({ currentMovesCount, value, onChange, di
                     className="generation-viz-chart" 
                     role="img" 
                     aria-label="Key frequency visualization"
-                    onPointerDown={handlePointerDown}
                     onPointerMove={handlePointerMove}
                     onPointerUp={handlePointerUp}
                     onPointerCancel={handlePointerUp}
-                    style={{ touchAction: 'none' }}
+                    style={{ touchAction: 'none', overflow: 'visible' }}
                   >
                     {keyChart.fillPath && <path d={keyChart.fillPath} className="generation-viz-fill" />}
                     <path d={keyChart.smoothPath} className="generation-viz-line" />
-                    {keyChart.curvePoints.map(point => (
-                      <g key={`lbl-${point.key}`}>
-                        <text
-                          x={point.x}
-                          y={keyChart.topPad + keyChart.plotHeight + 18}
-                          className="generation-viz-axis"
-                          textAnchor="middle"
-                        >
-                          {point.key}
-                        </text>
-                        <circle
-                          cx={point.x}
-                          cy={point.y}
-                          r={draggingKey === point.key ? 8 : 4}
-                          fill={draggingKey === point.key ? "#4CAF50" : "#ff7b54"}
-                          style={{ cursor: "ns-resize", transition: "r 0.1s ease" }}
-                        />
-                      </g>
-                    ))}
+                    {keyChart.curvePoints.map(point => {
+                      const isCustom = safeValue.weights && typeof safeValue.weights[point.key] === "number";
+                      const customWeight = isCustom ? safeValue.weights[point.key]! : 1.0;
+                      return (
+                        <g key={`lbl-${point.key}`} className="graph-node-group">
+                          {/* Guide line when dragging */}
+                          {draggingKey === point.key && (
+                            <line
+                              x1={point.x}
+                              y1={keyChart.topPad}
+                              x2={point.x}
+                              y2={keyChart.topPad + keyChart.plotHeight}
+                              stroke="#4CAF50"
+                              strokeDasharray="3,3"
+                              strokeWidth="1.5"
+                              opacity="0.6"
+                            />
+                          )}
+                          <text
+                            x={point.x}
+                            y={keyChart.topPad + keyChart.plotHeight + 18}
+                            className="generation-viz-axis"
+                            textAnchor="middle"
+                          >
+                            {point.key}
+                          </text>
+                          {/* Glowing outer ring */}
+                          <circle
+                            cx={point.x}
+                            cy={point.y}
+                            r={draggingKey === point.key ? 12 : isCustom ? 7 : 5}
+                            fill={draggingKey === point.key ? "rgba(76, 175, 80, 0.2)" : isCustom ? "rgba(255, 123, 84, 0.15)" : "transparent"}
+                            stroke={draggingKey === point.key ? "#4CAF50" : isCustom ? "#ff7b54" : "transparent"}
+                            strokeWidth={draggingKey === point.key ? 1.5 : isCustom ? 1 : 0}
+                            style={{ pointerEvents: 'none' }}
+                          />
+                          {/* Core Interactive Node */}
+                          <circle
+                            cx={point.x}
+                            cy={point.y}
+                            r={draggingKey === point.key ? 7 : isCustom ? 5 : 4.5}
+                            className={`graph-node ${draggingKey === point.key ? "dragging" : ""} ${isCustom ? "customized" : ""}`}
+                            style={{ cursor: "ns-resize", transition: "r 0.15s ease, fill 0.15s ease" }}
+                          />
+                          {/* Extra large hover and dragging hit target */}
+                          <circle
+                            cx={point.x}
+                            cy={point.y}
+                            r={18}
+                            fill="transparent"
+                            style={{ cursor: "ns-resize" }}
+                            onPointerDown={(e) => handlePointerDown(point.key, e)}
+                          />
+                          {/* Floating weight badge */}
+                          {(draggingKey === point.key || isCustom) && (
+                            <g className="node-tooltip">
+                              <rect
+                                x={point.x - 22}
+                                y={point.y - 25}
+                                width={44}
+                                height={14}
+                                rx={3}
+                                fill="#16161a"
+                                stroke={draggingKey === point.key ? "#4CAF50" : "#ff7b54"}
+                                strokeWidth={1}
+                              />
+                              <text
+                                x={point.x}
+                                y={point.y - 15}
+                                textAnchor="middle"
+                                fill="#ffffff"
+                                fontSize="8.5px"
+                                fontWeight="bold"
+                              >
+                                {customWeight.toFixed(2)}x
+                              </text>
+                            </g>
+                          )}
+                        </g>
+                      );
+                    })}
                   </svg>
                   <div className="generation-stats-row">
                     <span>Mean key: {keyDistribution.mean.toFixed(2)}</span>

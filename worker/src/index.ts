@@ -16,7 +16,7 @@ export interface Env {
   };
 
   SESSION_SECRET: string;
-  // Comma-separated list of allowed browser origins, e.g. "https://ghostmitts.com,https://www.ghostmitts.com"
+  // Comma-separated list of allowed browser origins
   // Requests without an Origin header (e.g. curl) will be rejected when this is enforced.
   ALLOWED_ORIGINS: string | string[];
 }

@@ -354,6 +354,7 @@ export function App() {
         length: len ?? { min: generationSettings.min, max: generationSettings.max },
         bias: generationSettings.bias,
         lengthVariance: generationSettings.lengthVariance,
+        weights: generationSettings.weights,
       }),
     [currentMoves, generationSettings]
   );
@@ -391,17 +392,22 @@ export function App() {
     }
   }, [getCombo]);
 
-  // ── combo emitter (fires at `speed` ms interval) ──────────────────────────
+  // Track previous active state to distinguish between initial play start and speed adjustments
+  const lastActiveRef = useRef(false);
+
+  // ── combo emitter (fires dynamically with timeouts to support per-combo adjustments) ──
   useEffect(() => {
     const isSessionActive = mode === "time" ? isTimerRunning : isCombosActive;
     if (!isSessionActive) {
       // Clear queues and stop sound if paused
       comboQueueRef.current = [];
       stopAudio();
+      lastActiveRef.current = false;
       return;
     }
 
-    // Fire the FIRST combo immediately (t=0)
+    let timeoutId: number | null = null;
+
     const emitCombo = () => {
       if (mode === "time" && timeLeftRef.current <= 0) return;
 
@@ -419,24 +425,52 @@ export function App() {
       const keys = comboQueueRef.current.shift();
       if (!keys) return;
 
+      // Calculate takedowns in this combo to dynamically extend display timer
+      const numTakedowns = keys.filter(k => {
+        const move = currentMoves.find(m => m.key === k);
+        return move && move.name.toUpperCase().includes("TAKEDOWN");
+      }).length;
+
+      // Calculate sprawls in this combo to add another 1 second per sprawl
+      const numSprawls = keys.filter(k => {
+        const move = currentMoves.find(m => m.key === k);
+        return move && move.name.toUpperCase().includes("SPRAWL");
+      }).length;
+
+      const nextDelay = speed + (numTakedowns * 2000) + (numSprawls * 1000);
+
       setCurrentCombo(comboToString(keys));
       // Stop any still-playing audio from the previous interval before starting the new one
       stopAudio();
-      playComboAudio(keys, speed);
+      playComboAudio(keys, nextDelay);
 
       setCombosCompleted(prev => {
         const next = prev + 1;
         combosCompletedRef.current = next;
         return next;
       });
+
+      // Schedule the next dynamic emission
+      timeoutId = window.setTimeout(emitCombo, nextDelay);
     };
 
     replenishQueue(); // prep before t=0
-    emitCombo(); // t=0
-    const interval = window.setInterval(emitCombo, speed);
-    return () => clearInterval(interval);
+    
+    const wasAlreadyActive = lastActiveRef.current;
+    lastActiveRef.current = true;
+    
+    if (!wasAlreadyActive) {
+      emitCombo(); // t=0 only when transitioning from paused to active
+    } else {
+      // Re-schedule immediately using the new speed baseline if mid-workout adjustment occurred
+      timeoutId = window.setTimeout(emitCombo, speed);
+    }
+
+    return () => {
+      if (timeoutId !== null) window.clearTimeout(timeoutId);
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, isTimerRunning, isCombosActive, speed, comboToString, playComboAudio, replenishQueue, endWorkoutSegment]);
+  }, [mode, isTimerRunning, isCombosActive, speed, comboToString, playComboAudio, replenishQueue, endWorkoutSegment, currentMoves]);
 
   // ── preset mutations ──────────────────────────────────────────────────────
   const updatePreset = (moves: Move[]) =>

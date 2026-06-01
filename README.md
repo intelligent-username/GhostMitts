@@ -34,7 +34,7 @@ This project uses standard npm scripts for local dev and builds.
 
 ## API (Cloudflare Worker)
 
-The backend API lives in [worker/src/index.ts](worker/src/index.ts) and persists accounts, presets, and workouts to **Turso**.
+The backend API lives in [worker/src/index.ts](worker/src/index.ts) and persists accounts, presets, and workouts.
 
 ### Local dev
 
@@ -50,7 +50,35 @@ npm install
 copy worker\.dev.vars.example worker\.dev.vars
 ```
 
-1. Run the Worker locally:
+#### Running with a Local SQLite/LibSQL File (No Turso Required)
+
+If you don't want to set up a remote Turso database for local development, you can run the API against a local SQLite file using LibSQL's embedded database feature.
+
+1. Open `worker/.dev.vars` and configure the following variables:
+   
+   ```env
+   # Tell the worker to write/read to a local SQLite database file
+   TURSO_DATABASE_URL=file:local.db
+   # Set a placeholder token (non-empty string required by index.ts)
+   TURSO_AUTH_TOKEN=local
+   # Set a mock session secret
+   SESSION_SECRET=local-session-secret-key-12345
+   ```
+
+2. Initialize the local database schema from `worker/schema.sql`:
+
+   * **Using sqlite3 (macOS/Linux/Git Bash)**:
+     ```bash
+     sqlite3 local.db < worker/schema.sql
+     ```
+   * **Using PowerShell (Windows)**:
+     ```powershell
+     Get-Content worker/schema.sql | sqlite3 local.db
+     ```
+   
+   *(Note: The `local.db` file will be created in your project root.)*
+
+3. Run the Worker locally:
 
 ```bash
 npm run api:dev

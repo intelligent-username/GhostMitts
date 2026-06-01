@@ -92,10 +92,11 @@ export function generateCombo(opts: ComboOptions): number[] {
   }
   const targetLen = weightedPick(lengthWeights);
   const weightOf = (k: number) => {
+    let w = Math.pow(bias, k - 1);
     if (weights && typeof weights[k] === "number") {
-      return weights[k];
+      w *= weights[k]!;
     }
-    return Math.pow(bias, k - 1);
+    return w;
   };
 
   const combo: number[] = [];

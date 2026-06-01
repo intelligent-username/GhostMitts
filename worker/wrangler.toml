@@ -16,6 +16,7 @@ compatibility_flags = ["nodejs_compat"]
 [vars]
 # Comma-separated browser origins that may call your API (CORS allowlist)
 # Example: "http://localhost:3000,https://your-frontend.com"
+# Remove these local things later.
 # If left empty, the Worker will only allow localhost origins (safe default).
 ALLOWED_ORIGINS = "https://pads.varak.dev, http://localhost:3000,http://127.0.0.1:3000"
 
