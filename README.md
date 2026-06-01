@@ -1,6 +1,8 @@
 # GhostMitts
 
-A little coach to tell you what combinations to throw.
+<img src="src/assets/logo.svg" alt="Logo" width="200" height="200">
+
+Imagine coach to tell you what combinations to throw.
 
 ## Running Locally
 

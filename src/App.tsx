@@ -19,6 +19,8 @@ import { DEFAULT_PRESETS, MAX_SLOTS, movesForSlot } from "./utils/constants";
 import { loadTotalSeconds, loadTotalCombos, saveTotalSeconds, saveTotalCombos, loadGenSettings, saveGenSettings } from "./utils/storage";
 import { useAudioSequencer } from "./hooks/useAudioSequencer";
 import { getBootstrap, getMe, insertWorkout, loginAccount, logoutAccount, registerAccount, upsertDailySession, upsertPreset } from "./utils/api";
+import bellUrl from "./assets/bell.ogg";
+import drumsUrl from "./assets/drums.ogg";
 
 const DEFAULT_GENERATION_SETTINGS: GenerationSettings = { min: 1, max: 20, bias: 0.80, lengthVariance: 1 };
 
@@ -323,6 +325,9 @@ export function App() {
   const currentTimerDuration = useRef<number>(0);
   const sessionStartMs       = useRef<number>(0); // wall-clock start for combos-mode timing
   const timerRef             = useRef<number | null>(null);
+  const currentComboKeysRef  = useRef<number[] | null>(null);
+  const comboTimeRemainingRef = useRef<number>(0);
+  const comboStartedAtRef    = useRef<number>(0);
 
   useEffect(() => { timeLeftRef.current        = timeLeft;        }, [timeLeft]);
   useEffect(() => { combosCompletedRef.current  = combosCompleted; }, [combosCompleted]);
@@ -331,6 +336,11 @@ export function App() {
   // ── 1-second countdown (time mode) ───────────────────────────────────────
   useEffect(() => {
     if (isTimerRunning && timeLeft > 0) {
+      if (timeLeft === 10) {
+        const audio = new Audio(drumsUrl);
+        audio.volume = 0.6;
+        audio.play().catch(() => {});
+      }
       timerRef.current = window.setTimeout(() => setTimeLeft(p => p - 1), 1000);
     } else if (timeLeft === 0 && isTimerRunning) {
       // Timer finished
@@ -437,7 +447,11 @@ export function App() {
         return move && move.name.toUpperCase().includes("SPRAWL");
       }).length;
 
-      const nextDelay = speed + (numTakedowns * 2000) + (numSprawls * 1000);
+      const nextDelay = speed + (numTakedowns * 1500) + (numSprawls * 1000);
+
+      currentComboKeysRef.current = keys;
+      comboTimeRemainingRef.current = nextDelay;
+      comboStartedAtRef.current = Date.now();
 
       setCurrentCombo(comboToString(keys));
       // Stop any still-playing audio from the previous interval before starting the new one
@@ -454,13 +468,34 @@ export function App() {
       timeoutId = window.setTimeout(emitCombo, nextDelay);
     };
 
+    const resumeCombo = () => {
+      const keys = currentComboKeysRef.current;
+      const remainingTime = comboTimeRemainingRef.current;
+      if (!keys || remainingTime <= 0) {
+        emitCombo();
+        return;
+      }
+
+      comboStartedAtRef.current = Date.now();
+
+      setCurrentCombo(comboToString(keys));
+      stopAudio();
+      playComboAudio(keys, remainingTime);
+
+      timeoutId = window.setTimeout(emitCombo, remainingTime);
+    };
+
     replenishQueue(); // prep before t=0
     
     const wasAlreadyActive = lastActiveRef.current;
     lastActiveRef.current = true;
     
     if (!wasAlreadyActive) {
-      emitCombo(); // t=0 only when transitioning from paused to active
+      if (currentComboKeysRef.current && comboTimeRemainingRef.current > 0) {
+        resumeCombo();
+      } else {
+        emitCombo();
+      }
     } else {
       // Re-schedule immediately using the new speed baseline if mid-workout adjustment occurred
       timeoutId = window.setTimeout(emitCombo, speed);
@@ -468,6 +503,12 @@ export function App() {
 
     return () => {
       if (timeoutId !== null) window.clearTimeout(timeoutId);
+
+      // Save remaining time for the current combo when paused
+      if (comboStartedAtRef.current > 0) {
+        const elapsed = Date.now() - comboStartedAtRef.current;
+        comboTimeRemainingRef.current = Math.max(0, comboTimeRemainingRef.current - elapsed);
+      }
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, isTimerRunning, isCombosActive, speed, comboToString, playComboAudio, replenishQueue, endWorkoutSegment, currentMoves]);
@@ -717,6 +758,15 @@ export function App() {
         const seconds = parseInt(timeInputSec) || 0;
         const total   = minutes * 60 + seconds;
         if (total > 0) {
+          // Play round start bell ONLY on BRAND NEW round
+          const audio = new Audio(bellUrl);
+          audio.volume = 0.6;
+          audio.play().catch(() => {});
+
+          currentComboKeysRef.current = null;
+          comboTimeRemainingRef.current = 0;
+          comboStartedAtRef.current = 0;
+
           setCurrentCombo("");
           setCombosCompleted(0);
           combosCompletedRef.current = 0;
@@ -735,6 +785,15 @@ export function App() {
       if (!hasStarted) {
         const count = parseInt(comboInput) || 0;
         if (count > 0) {
+          // Play round start bell ONLY on BRAND NEW round
+          const audio = new Audio(bellUrl);
+          audio.volume = 0.6;
+          audio.play().catch(() => {});
+
+          currentComboKeysRef.current = null;
+          comboTimeRemainingRef.current = 0;
+          comboStartedAtRef.current = 0;
+
           setCurrentCombo("");
           setCombosCompleted(0);
           combosCompletedRef.current = 0;
@@ -772,6 +831,11 @@ export function App() {
     setTotalCombos(0);
     totalCombosRef.current = 0;
     setCurrentCombo("");
+
+    // Clear combo resume state
+    currentComboKeysRef.current = null;
+    comboTimeRemainingRef.current = 0;
+    comboStartedAtRef.current = 0;
   };
 
   //  Render

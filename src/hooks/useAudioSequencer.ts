@@ -15,6 +15,16 @@ export function useAudioSequencer({
 }) {
   const activeAudioRef = useRef<HTMLAudioElement | null>(null);
   const audioCacheRef = useRef<Map<string, HTMLAudioElement>>(new Map());
+  const activeTimeoutRef = useRef<any>(null);
+
+  // Clear any scheduled timeouts on unmount to prevent leaks
+  useEffect(() => {
+    return () => {
+      if (activeTimeoutRef.current) {
+        clearTimeout(activeTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // 1️⃣ PRELOADER: Loads ALL combo audio into memory exactly once during initialization
   useEffect(() => {
@@ -44,8 +54,13 @@ export function useAudioSequencer({
   }, [currentMoves]);
 
   const stopAudio = useCallback(() => {
+    if (activeTimeoutRef.current) {
+      clearTimeout(activeTimeoutRef.current);
+      activeTimeoutRef.current = null;
+    }
     if (activeAudioRef.current) {
       activeAudioRef.current.pause();
+      activeAudioRef.current.onended = null;
       activeAudioRef.current = null;
     }
   }, []);
@@ -53,6 +68,8 @@ export function useAudioSequencer({
   const playComboAudio = useCallback(
     (keys: number[], timeAllowedMs: number) => {
       if (!useVoiceRef.current) return;
+
+      stopAudio(); // Reset any currently running playback sequence
 
       // Ensure we aim to finish playing all moves in AT MOST a fraction of the speed allocation.
       const maxTimePerMove = (timeAllowedMs * 0.7) / keys.length;
@@ -107,7 +124,47 @@ export function useAudioSequencer({
 
         audio.onended = () => {
           audio.onended = null;
-          playNext(index + 1);
+          
+          let delay = 0;
+          if (index < keys.length - 1) {
+            const currentKey = keys[index];
+            const nextKey = keys[index + 1];
+            const currentMove = currentMoves.find(m => m.key === currentKey);
+            const nextMove = currentMoves.find(m => m.key === nextKey);
+            const curName = currentMove?.name.toUpperCase() || "";
+            const nextName = nextMove?.name.toUpperCase() || "";
+
+            // Double-up compression: identical consecutive moves play rapid-fire
+            if (curName === nextName && curName !== "") {
+              delay = 0;
+            } else {
+              delay = 100; // standard space between voice cues
+            }
+
+            // High commitment extra padding (kicks, knees, elbows, defenses, heavy punches)
+            const highCommitmentSuffixes = [
+              "KICK", "TEEP", "KNEE", "ELBOW", "TAKEDOWN", "SPRAWL", "OVERHAND", "SPINNING"
+            ];
+            const isHighCommitment = highCommitmentSuffixes.some(suffix => curName.includes(suffix));
+            if (isHighCommitment) {
+              if (curName.includes("TAKEDOWN")) {
+                delay += 1000;
+              } else if (curName.includes("SPRAWL")) {
+                delay += 800;
+              } else {
+                delay += 400; // standard kick/knee/elbow padding
+              }
+            }
+          }
+
+          if (delay > 0) {
+            activeTimeoutRef.current = window.setTimeout(() => {
+              activeTimeoutRef.current = null;
+              playNext(index + 1);
+            }, delay);
+          } else {
+            playNext(index + 1);
+          }
         };
         
         audio.play().catch(() => playNext(index + 1));
@@ -115,7 +172,7 @@ export function useAudioSequencer({
 
       playNext(0);
     },
-    [currentMoves, displayModeRef, customDisplayKeysRef, useVoiceRef]
+    [currentMoves, displayModeRef, customDisplayKeysRef, useVoiceRef, stopAudio]
   );
 
   return { playComboAudio, stopAudio };
