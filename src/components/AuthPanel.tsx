@@ -56,7 +56,7 @@ export function AuthPanel({ username, isBusy, apiConnected, onLogin, onRegister,
       )}
 
       <div className={`auth-connection ${apiConnected === true ? "ok" : apiConnected === false ? "down" : "pending"}`}>
-        {apiConnected === null ? "Checking API..." : apiConnected ? "Accounts Ready" : "Accoutns Offline"}
+        {apiConnected === null ? "Checking API..." : apiConnected ? "Accounts Ready" : "Accounts Offline"}
       </div>
 
       {isOpen && (

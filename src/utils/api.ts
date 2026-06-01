@@ -18,7 +18,14 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
 
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(text || `Request failed: ${res.status}`);
+    let msg = text || `Request failed: ${res.status}`;
+    try {
+      const parsed = JSON.parse(text);
+      if (parsed && typeof parsed.error === "string") {
+        msg = parsed.error;
+      }
+    } catch {}
+    throw new Error(msg);
   }
 
   if (res.status === 204) return {} as T;
@@ -53,6 +60,7 @@ export async function getBootstrap() {
     todaySession: null | { date: string; num_combos: number; time_seconds: number };
     presets: Array<{ preset_name: string; preset_data: unknown }>;
     streak: number;
+    activeDates?: string[];
   }>("/bootstrap", { method: "GET" });
 }
 

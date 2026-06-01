@@ -13,6 +13,7 @@ import { LeftDisplay } from "./components/LeftDisplay";
 import { ControlsColumn } from "./components/ControlsColumn";
 import { PresetsColumn } from "./components/PresetsColumn";
 import { AuthPanel } from "./components/AuthPanel";
+import { StreakGridModal } from "./components/StreakGridModal";
 import type { Move, PresetKey, GenerationSettings } from "./types";
 import { DEFAULT_PRESETS, MAX_SLOTS, movesForSlot } from "./utils/constants";
 import { loadTotalSeconds, loadTotalCombos, saveTotalSeconds, saveTotalCombos, loadGenSettings, saveGenSettings } from "./utils/storage";
@@ -117,6 +118,10 @@ export function App() {
   const useVoiceRef = useRef<boolean>(true);
   useEffect(() => { useVoiceRef.current = useVoice; }, [useVoice]);
 
+  const [activeDates, setActiveDates] = useState<string[]>([]);
+  const [streak, setStreak] = useState<number>(0);
+  const [showStreakModal, setShowStreakModal] = useState<boolean>(false);
+
   // Session totals from localStorage
   const [totalPracticeSeconds, setTotalPracticeSeconds] = useState<number>(() => loadTotalSeconds());
   const [totalPracticeCombos, setTotalPracticeCombos] = useState<number>(() => loadTotalCombos());
@@ -140,6 +145,15 @@ export function App() {
 
   // Persist whenever totals change
   useEffect(() => { saveTotalSeconds(totalPracticeSeconds); }, [totalPracticeSeconds]);
+
+  const triggerCloudSessionSave = useCallback((overrideSec?: number, overrideCombos?: number) => {
+    const uname = usernameRef.current;
+    if (!uname) return;
+    const seconds = overrideSec !== undefined ? overrideSec : totalPracticeSecondsRef.current;
+    const combos = overrideCombos !== undefined ? overrideCombos : totalPracticeCombosRef.current;
+    const date = new Date().toISOString().split("T")[0]!;
+    void upsertDailySession({ date, num_combos: combos, time_seconds: seconds }).catch(() => {});
+  }, []);
   useEffect(() => { saveTotalCombos(totalPracticeCombos);  }, [totalPracticeCombos]);
 
   useEffect(() => {
@@ -156,6 +170,12 @@ export function App() {
             if (boot.todaySession) {
               setTotalPracticeSeconds(Math.max(0, Number(boot.todaySession.time_seconds || 0)));
               setTotalPracticeCombos(Math.max(0, Number(boot.todaySession.num_combos || 0)));
+            }
+            if (boot.streak !== undefined) {
+              setStreak(boot.streak);
+            }
+            if (boot.activeDates) {
+              setActiveDates(boot.activeDates);
             }
 
             const presetMap = new Map<PresetKey, { moves?: Move[]; generationSettings?: GenerationSettings }>();
@@ -297,10 +317,13 @@ export function App() {
       // Timer finished
       endWorkoutSegment("complete");
       setIsTimerRunning(false);
-      setTotalPracticeSeconds(p => p + currentTimerDuration.current);
+      const nextSeconds = totalPracticeSecondsRef.current + currentTimerDuration.current;
+      const nextCombos = totalPracticeCombosRef.current + combosCompletedRef.current;
+      setTotalPracticeSeconds(nextSeconds);
       if (combosCompletedRef.current > 0) {
-        setTotalPracticeCombos(p => p + combosCompletedRef.current);
+        setTotalPracticeCombos(nextCombos);
       }
+      triggerCloudSessionSave(nextSeconds, nextCombos);
     }
     return () => { if (timerRef.current) clearTimeout(timerRef.current); };
   }, [isTimerRunning, timeLeft, endWorkoutSegment]);
@@ -372,8 +395,11 @@ export function App() {
           setIsCombosActive(false);
           // Calculate final elapsed time
           const elapsed = Math.round((Date.now() - sessionStartMs.current) / 1000);
-          setTotalPracticeSeconds(p => p + Math.max(0, elapsed));
-          setTotalPracticeCombos(p => p + limit);
+          const nextSec = totalPracticeSecondsRef.current + Math.max(0, elapsed);
+          const nextCombos = totalPracticeCombosRef.current + limit;
+          setTotalPracticeSeconds(nextSec);
+          setTotalPracticeCombos(nextCombos);
+          triggerCloudSessionSave(nextSec, nextCombos);
         }
         return;
       }
@@ -417,6 +443,23 @@ export function App() {
     saveGenSettings(JSON.stringify(generationSettings));
   }, [generationSettings]);
 
+  // Auto-save presets to cloud when moves or generation settings change (debounced)
+  useEffect(() => {
+    if (!username) return; // must be logged in
+    const preset = selectedPreset;
+    const moves = customMoves[preset];
+    const gen = generationSettings;
+
+    const timer = setTimeout(() => {
+      void upsertPreset({
+        preset_name: preset,
+        preset_data: { moves, generationSettings: gen, frequencies: [] },
+      }).catch(() => {});
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, [customMoves, generationSettings, selectedPreset, username]);
+
   const handleAddRow = () => {
     if (currentMoves.length >= MAX_SLOTS) return;
     const nextKey = currentMoves.length + 1;
@@ -450,6 +493,8 @@ export function App() {
           setTotalPracticeSeconds(Math.max(0, Number(boot.todaySession.time_seconds || 0)));
           setTotalPracticeCombos(Math.max(0, Number(boot.todaySession.num_combos || 0)));
         }
+        if (boot.streak !== undefined) setStreak(boot.streak);
+        if (boot.activeDates) setActiveDates(boot.activeDates);
       } catch {}
     } finally {
       setAuthBusy(false);
@@ -469,6 +514,8 @@ export function App() {
           setTotalPracticeSeconds(Math.max(0, Number(boot.todaySession.time_seconds || 0)));
           setTotalPracticeCombos(Math.max(0, Number(boot.todaySession.num_combos || 0)));
         }
+        if (boot.streak !== undefined) setStreak(boot.streak);
+        if (boot.activeDates) setActiveDates(boot.activeDates);
 
         const presetMap = new Map<PresetKey, { moves?: Move[]; generationSettings?: GenerationSettings }>();
         for (const p of boot.presets) {
@@ -506,13 +553,16 @@ export function App() {
   const handleLogout = useCallback(async () => {
     setAuthBusy(true);
     try {
+      triggerCloudSessionSave();
       await logoutAccount();
       setUsername(null);
+      setStreak(0);
+      setActiveDates([]);
       setApiConnected(true);
     } finally {
       setAuthBusy(false);
     }
-  }, []);
+  }, [triggerCloudSessionSave]);
 
   const flushCloudSavesOnClose = useCallback(() => {
     // Only flush once per page lifecycle.
@@ -635,11 +685,14 @@ export function App() {
     if (mode === "time") {
       endWorkoutSegment("pause");
       setIsTimerRunning(false);
+      triggerCloudSessionSave();
     } else if (isCombosActive) {
       setIsCombosActive(false);
       const elapsed = Math.round((Date.now() - sessionStartMs.current) / 1000);
-      setTotalPracticeSeconds(p => p + Math.max(0, elapsed));
+      const nextSec = totalPracticeSecondsRef.current + Math.max(0, elapsed);
+      setTotalPracticeSeconds(nextSec);
       endWorkoutSegment("pause");
+      triggerCloudSessionSave(nextSec, totalPracticeCombos);
     }
   };
 
@@ -653,6 +706,7 @@ export function App() {
     setTotalCombos(0);
     totalCombosRef.current = 0;
     setCurrentCombo("");
+    triggerCloudSessionSave();
   };
 
   //  Render
@@ -665,9 +719,16 @@ export function App() {
       <div className="app-container mobile-container">
         <div className="mobile-header">
           <h1 className="ghost-mitts-title-h1">GhostMitts</h1>
-          <button className="settings-toggle-btn" onClick={() => setShowSettings(true)}>
-            <SettingsIcon />
-          </button>
+          <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center' }}>
+            {username && (
+              <button className="streak-header-btn" onClick={() => setShowStreakModal(true)} title="View practice streak">
+                🔥
+              </button>
+            )}
+            <button className="settings-toggle-btn" onClick={() => setShowSettings(true)}>
+              <SettingsIcon />
+            </button>
+          </div>
         </div>
 
         {/* Dynamic Display of ongoing session */}
@@ -688,6 +749,8 @@ export function App() {
             useVoice={useVoice}
             setUseVoice={setUseVoice}
             isMobile={true}
+            username={username}
+            onStreakClick={() => setShowStreakModal(true)}
           />
         )}
 
@@ -785,6 +848,13 @@ export function App() {
             </div>
           </div>
         )}
+
+        <StreakGridModal
+          isOpen={showStreakModal}
+          onClose={() => setShowStreakModal(false)}
+          activeDates={activeDates}
+          streak={streak}
+        />
       </div>
     );
   }
@@ -812,6 +882,8 @@ export function App() {
         useVoice={useVoice}
         setUseVoice={setUseVoice}
         isMobile={false}
+        username={username}
+        onStreakClick={() => setShowStreakModal(true)}
       />
 
       {/* RIGHT has two columns: controls & presets */}
@@ -858,6 +930,13 @@ export function App() {
         />
 
       </div>
+
+      <StreakGridModal
+        isOpen={showStreakModal}
+        onClose={() => setShowStreakModal(false)}
+        activeDates={activeDates}
+        streak={streak}
+      />
     </div>
   );
 }

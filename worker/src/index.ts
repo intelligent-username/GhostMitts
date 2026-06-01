@@ -254,8 +254,12 @@ export default {
       const passwordHash = await hashPassword(password);
       try {
         await dbRun(env, "INSERT INTO users (username, password_hash) VALUES (?, ?)", [username, passwordHash]);
-      } catch {
-        return json({ error: "username already exists" }, 409, corsHeaders(allowedOrigin, request));
+      } catch (e: any) {
+        const msg = String(e?.message ?? e ?? "").toLowerCase();
+        if (msg.includes("unique") || msg.includes("constraint") || msg.includes("duplicate")) {
+          return json({ error: "username already exists" }, 409, corsHeaders(allowedOrigin, request));
+        }
+        return json({ error: "server error: " + String(e?.message ?? e) }, 500, corsHeaders(allowedOrigin, request));
       }
 
       return json({ success: true }, 201, corsHeaders(allowedOrigin, request));
@@ -355,6 +359,7 @@ export default {
           todaySession: todaySession ?? null,
           presets,
           streak,
+          activeDates: dates,
         },
         200,
         corsHeaders(allowedOrigin, request)

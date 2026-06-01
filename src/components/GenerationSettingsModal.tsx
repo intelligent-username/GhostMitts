@@ -1,10 +1,17 @@
 import { useMemo, useState } from "react";
-import type { GenerationSettings } from "../types";
+import type { GenerationSettings, DisplayMode, Move } from "../types";
 
 interface GenerationSettingsModalProps {
   currentMovesCount: number;
   value: GenerationSettings;
   onChange: (next: GenerationSettings) => void;
+  displayMode: DisplayMode;
+  setDisplayMode: (mode: DisplayMode) => void;
+  useVoice: boolean;
+  setUseVoice: (val: boolean) => void;
+  currentMoves: Move[];
+  customDisplayKeys: Set<number>;
+  setCustomDisplayKeys: (keys: Set<number>) => void;
 }
 
 function clampSettings(settings: GenerationSettings): GenerationSettings {
@@ -30,7 +37,7 @@ function buildSmoothPath(points: Array<{ x: number; y: number }>): string {
   return path;
 }
 
-export function GenerationSettingsModal({ currentMovesCount, value, onChange }: GenerationSettingsModalProps) {
+export function GenerationSettingsModal({ currentMovesCount, value, onChange, displayMode, setDisplayMode, useVoice, setUseVoice, currentMoves, customDisplayKeys, setCustomDisplayKeys }: GenerationSettingsModalProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   const safeValue = useMemo(
@@ -212,25 +219,83 @@ export function GenerationSettingsModal({ currentMovesCount, value, onChange }: 
         onClick={() => setIsOpen(true)}
         type="button"
       >
-        Customize Generation
+        Customize
       </button>
 
       {isOpen && (
         <div className="generation-modal-backdrop" onClick={() => setIsOpen(false)}>
           <div className="generation-modal" onClick={(e) => e.stopPropagation()}>
             <div className="generation-modal-header">
-              <h3 className="generation-modal-title">Generation Settings</h3>
+              <h3 className="generation-modal-title">Customization</h3>
               <button
                 className="generation-modal-close"
                 onClick={() => setIsOpen(false)}
                 type="button"
-                aria-label="Close generation settings"
+                aria-label="Close customization"
               >
                 ×
               </button>
             </div>
 
             <div className="generation-modal-body">
+              {/* ── Display & Voice Settings ─────────────────────────── */}
+              <div className="customize-display-section">
+                <h4 className="customize-section-title">Display & Audio</h4>
+                <div className="customize-voice-row">
+                  <label className="customize-toggle-label">
+                    <input
+                      type="checkbox"
+                      checked={useVoice}
+                      onChange={e => setUseVoice(e.target.checked)}
+                    />
+                    <span>Use Voice</span>
+                  </label>
+                </div>
+                <div className="customize-display-mode">
+                  <span className="customize-mode-label">Combo Display</span>
+                  <div className="customize-mode-pills">
+                    {(["numbers", "fullname", "custom"] as DisplayMode[]).map(m => (
+                      <button
+                        key={m}
+                        className={`customize-pill ${displayMode === m ? "active" : ""}`}
+                        onClick={() => setDisplayMode(m)}
+                        type="button"
+                      >
+                        {m === "numbers" ? "Numbers" : m === "fullname" ? "Full Name" : "Custom"}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                {displayMode === "custom" && (
+                  <div className="customize-per-move">
+                    <p className="customize-per-move-hint">Toggle each move to show its full name instead of number:</p>
+                    <div className="customize-per-move-list">
+                      {currentMoves.map(m => {
+                        const isName = customDisplayKeys.has(m.key);
+                        return (
+                          <button
+                            key={m.key}
+                            className={`customize-move-chip ${isName ? "name-mode" : "num-mode"}`}
+                            onClick={() => {
+                              const next = new Set(customDisplayKeys);
+                              if (isName) next.delete(m.key); else next.add(m.key);
+                              setCustomDisplayKeys(next);
+                            }}
+                            type="button"
+                          >
+                            <span className="chip-key">{m.key}</span>
+                            <span className="chip-name">{m.name}</span>
+                            <span className="chip-badge">{isName ? "NAME" : "#"}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="customize-divider" />
+              <h4 className="customize-section-title">Generation</h4>
               <div className="generation-control-grid">
                 <div className="generation-control-card">
                   <div className="generation-control-top">

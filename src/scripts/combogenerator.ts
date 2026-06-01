@@ -34,7 +34,7 @@ const REAR_KICK_NAMES = new Set([
   "HEAD KICK",
 ]);
 
-export type Move = { key: number; name: string; locked: boolean };
+import type { Move } from "../types";
 
 export interface ComboOptions {
   moves: Move[];

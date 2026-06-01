@@ -338,3 +338,211 @@
   }
 }
 
+/* Streak / Activity Grid Styles */
+.streak-header-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  padding: 0;
+}
+
+.streak-header-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: scale(1.05);
+}
+
+.streak-header-btn:active {
+  transform: scale(0.95);
+}
+
+.streak-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+  animation: fadeIn 0.25s ease-out;
+}
+
+.streak-modal-content {
+  background: rgba(18, 18, 18, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  width: 90%;
+  max-width: 500px;
+  padding: 2rem;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
+}
+
+.streak-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.streak-header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.streak-header-left h2 {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 700;
+  background: linear-gradient(to right, #ffffff, #bbbbbb);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.streak-fire-icon {
+  font-size: 1.8rem;
+  animation: pulse 1.5s infinite ease-in-out;
+}
+
+.streak-modal-close {
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 2rem;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0;
+  transition: color 0.2s;
+}
+
+.streak-modal-close:hover {
+  color: #fff;
+}
+
+.streak-modal-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.8rem;
+}
+
+.streak-stat-box {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.01));
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 20px;
+  padding: 1.5rem 3rem;
+  text-align: center;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.streak-stat-num {
+  font-size: 3.5rem;
+  font-weight: 800;
+  color: #00ff66;
+  text-shadow: 0 0 20px rgba(0, 255, 102, 0.4);
+  line-height: 1;
+  margin-bottom: 0.4rem;
+}
+
+.streak-stat-label {
+  font-size: 0.9rem;
+  color: #aaa;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.streak-grid-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.streak-grid-title {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.streak-grid {
+  display: grid;
+  /* 16 weeks * 7 days = 112 cells. Align in 16 columns of 7 cells */
+  grid-template-columns: repeat(16, 1fr);
+  gap: 4px;
+  width: 100%;
+}
+
+.streak-grid-cell {
+  aspect-ratio: 1;
+  border-radius: 2px;
+  transition: transform 0.1s ease;
+}
+
+.streak-grid-cell.inactive {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.streak-grid-cell.active {
+  background: #00ff66;
+  box-shadow: 0 0 8px rgba(0, 255, 102, 0.4);
+}
+
+.streak-grid-cell:hover {
+  transform: scale(1.3);
+  z-index: 2;
+}
+
+.streak-grid-legend {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: #666;
+  margin-top: 0.4rem;
+}
+
+.streak-grid-legend .streak-grid-cell {
+  width: 10px;
+  height: 10px;
+}
+
+.streak-modal-hint {
+  font-size: 0.9rem;
+  color: #888;
+  text-align: center;
+  margin: 0;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+

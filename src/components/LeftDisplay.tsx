@@ -14,6 +14,8 @@ interface LeftDisplayProps {
   useVoice: boolean;
   setUseVoice: (val: boolean) => void;
   isMobile?: boolean;
+  username: string | null;
+  onStreakClick: () => void;
 }
 
 export function LeftDisplay({
@@ -32,6 +34,8 @@ export function LeftDisplay({
   useVoice,
   setUseVoice,
   isMobile = false,
+  username,
+  onStreakClick,
 }: LeftDisplayProps) {
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
@@ -113,6 +117,16 @@ export function LeftDisplay({
 
         <div className="practice-totals">
           {totalMins} min · {totalPracticeCombos} combos total
+          {username && (
+            <button
+              className="streak-header-btn"
+              onClick={onStreakClick}
+              title="View practice streak"
+              style={{ marginLeft: '0.6rem', width: '32px', height: '32px', fontSize: '1rem' }}
+            >
+              🔥
+            </button>
+          )}
         </div>
       </div>
     </div>

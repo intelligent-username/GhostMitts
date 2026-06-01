@@ -287,3 +287,169 @@
     max-height: 94vh;
   }
 }
+
+/* Customize Display & Voice Section */
+.customize-display-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.customize-section-title {
+  margin: 0;
+  color: #bbb;
+  font-size: 0.78rem;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.customize-voice-row {
+  display: flex;
+  align-items: center;
+}
+
+.customize-toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: #ccc;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.customize-toggle-label input[type="checkbox"] {
+  accent-color: #4CAF50;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.customize-display-mode {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.customize-mode-label {
+  color: #888;
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.customize-mode-pills {
+  display: flex;
+  gap: 0;
+  border: 1px solid #333;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.customize-pill {
+  background: #0a0a0a;
+  border: none;
+  color: #777;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.45rem 0.9rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border-right: 1px solid #333;
+}
+
+.customize-pill:last-child {
+  border-right: none;
+}
+
+.customize-pill.active {
+  background: #4CAF50;
+  color: #fff;
+}
+
+.customize-pill:hover:not(.active) {
+  background: #1a1a1a;
+  color: #ccc;
+}
+
+.customize-per-move {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.customize-per-move-hint {
+  margin: 0;
+  color: #666;
+  font-size: 0.75rem;
+}
+
+.customize-per-move-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.customize-move-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 8px;
+  padding: 0.4rem 0.7rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: 1px solid #333;
+  background: #0d0d0f;
+  color: #ccc;
+}
+
+.customize-move-chip:hover {
+  border-color: #4CAF50;
+}
+
+.customize-move-chip .chip-key {
+  color: #888;
+  font-weight: 700;
+  min-width: 1.1em;
+  text-align: center;
+}
+
+.customize-move-chip .chip-name {
+  color: #bbb;
+}
+
+.customize-move-chip .chip-badge {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-radius: 4px;
+  padding: 0.15rem 0.35rem;
+  font-weight: 700;
+}
+
+.customize-move-chip.num-mode .chip-badge {
+  background: rgba(255, 255, 255, 0.08);
+  color: #888;
+}
+
+.customize-move-chip.name-mode {
+  border-color: rgba(76, 175, 80, 0.4);
+  background: rgba(76, 175, 80, 0.08);
+}
+
+.customize-move-chip.name-mode .chip-badge {
+  background: rgba(76, 175, 80, 0.25);
+  color: #4CAF50;
+}
+
+.customize-divider {
+  height: 1px;
+  background: #232323;
+  margin: 0.3rem 0;
+}
+
+.generation-viz-fill {
+  fill: rgba(76, 175, 80, 0.12);
+}

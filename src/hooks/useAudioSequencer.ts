@@ -1,14 +1,16 @@
 import { useCallback, useRef, useEffect } from "react";
-import type { Move } from "../types";
+import type { Move, DisplayMode } from "../types";
 import { NUMBER_AUDIO_MAP, MOVE_AUDIO_MAP } from "../utils/constants";
 
 export function useAudioSequencer({
   useVoiceRef,
-  showFullNameRef,
+  displayModeRef,
+  customDisplayKeysRef,
   currentMoves,
 }: {
   useVoiceRef: React.MutableRefObject<boolean>;
-  showFullNameRef: React.MutableRefObject<boolean>;
+  displayModeRef: React.MutableRefObject<DisplayMode>;
+  customDisplayKeysRef: React.MutableRefObject<Set<number>>;
   currentMoves: Move[];
 }) {
   const activeAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -58,8 +60,15 @@ export function useAudioSequencer({
       // Most voicegen tracks are ~0.8s long (800ms)
       const idealPlaybackRate = Math.max(1.2, Math.min(3.0, 800 / maxTimePerMove));
 
+      const mode = displayModeRef.current;
+      const customKeys = customDisplayKeysRef.current;
+
       const audioQueue = keys.map((k) => {
-        if (showFullNameRef.current) {
+        const useName =
+          mode === "fullname" ||
+          (mode === "custom" && customKeys.has(k));
+
+        if (useName) {
           const moveName =
             currentMoves.find((m) => m.key === k)?.name ?? String(k);
           const filename = MOVE_AUDIO_MAP[moveName.toUpperCase()];
@@ -106,7 +115,7 @@ export function useAudioSequencer({
 
       playNext(0);
     },
-    [currentMoves, showFullNameRef, useVoiceRef]
+    [currentMoves, displayModeRef, customDisplayKeysRef, useVoiceRef]
   );
 
   return { playComboAudio, stopAudio };
