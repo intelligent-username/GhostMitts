@@ -12,6 +12,7 @@ interface LeftDisplayProps {
   isMobile?: boolean;
   username: string | null;
   onStreakClick: () => void;
+  countdown: number | null;
 }
 
 export function LeftDisplay({
@@ -28,6 +29,7 @@ export function LeftDisplay({
   isMobile = false,
   username,
   onStreakClick,
+  countdown,
 }: LeftDisplayProps) {
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
@@ -40,9 +42,25 @@ export function LeftDisplay({
     : "0";
 
   const renderContent = () => {
+    if (countdown !== null) {
+      return (
+        <div className="display-wrapper countdown-wrapper">
+          <div className={`countdown-number ${countdown === 0 ? "fight" : ""}`}>
+            {countdown === 0 ? "FIGHT!" : countdown}
+          </div>
+          <div className="countdown-subtext">Get Ready...</div>
+        </div>
+      );
+    }
+
     if (mode === "time") {
       if (!isTimerRunning && timeLeft === 0 && !currentCombo)
         return isMobile ? null : <div className="idle-text">Ready</div>;
+      
+      if (timeLeft === 0 && currentCombo) {
+        return <div className="idle-text">{currentCombo}</div>;
+      }
+
       return (
         <div className="display-wrapper">
           <div className="time-display">{formatTime(timeLeft)}</div>
@@ -55,6 +73,11 @@ export function LeftDisplay({
     // combos mode
     if (!isCombosActive && totalCombos === 0 && !currentCombo)
       return isMobile ? null : <div className="idle-text">Ready</div>;
+
+    if (totalCombos === 0 && currentCombo) {
+      return <div className="idle-text">{currentCombo}</div>;
+    }
+
     return (
       <div className="display-wrapper">
         <div className="combo-status">

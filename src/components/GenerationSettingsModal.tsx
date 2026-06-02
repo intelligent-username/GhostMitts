@@ -207,7 +207,7 @@ export function GenerationSettingsModal({ currentMovesCount, value, onChange, di
         ? safeValue.weights[draggingKey]!
         : Math.pow(safeValue.bias, draggingKey - 1);
         
-      const newWeight = currentWeight * Math.pow(1.04, delta);
+      const newWeight = currentWeight * Math.pow(1.01, delta);
       
       const nextWeights = { ...(safeValue.weights || {}) };
       nextWeights[draggingKey] = Math.max(0.001, Math.min(100.0, newWeight));

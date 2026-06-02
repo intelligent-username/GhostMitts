@@ -487,68 +487,42 @@
   letter-spacing: 0.08em;
 }
 
-/* ── Legend ── */
-.streak-grid-legend {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 0.68rem;
-  color: #555;
-}
-
-.streak-legend-cell {
-  width: 10px;
-  height: 10px;
-  border-radius: 2px;
-}
-
-.streak-legend-cell.inactive {
-  background: rgba(255, 255, 255, 0.08);
-}
-.streak-legend-cell.active-low {
-  background: #0d4a2b;
-}
-.streak-legend-cell.active-mid {
-  background: #1a8c54;
-}
-.streak-legend-cell.active-high {
-  background: #00ff66;
-  box-shadow: 0 0 5px rgba(0, 255, 102, 0.4);
-}
-
 /* ── Grid wrapper: dow labels + scrollable grid ── */
 .streak-grid-wrapper {
   display: flex;
-  gap: 4px;
+  gap: 8px;
   width: 100%;
-  overflow: hidden;
 }
 
 /* Day-of-week labels column */
 .streak-dow-labels {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
   flex-shrink: 0;
-  padding-top: 18px;
+}
+
+.streak-dow-label-header {
+  height: 16px;
 }
 
 .streak-dow-label {
-  height: 11px;
-  font-size: 0.58rem;
-  color: #4a4a4a;
-  line-height: 11px;
+  font-size: 0.6rem;
+  color: #555;
   white-space: nowrap;
   text-align: right;
-  padding-right: 3px;
-  width: 20px;
+  padding-right: 4px;
+  width: 24px;
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  box-sizing: border-box;
 }
 
 /* Scrollable grid area */
 .streak-grid-scroll {
   flex: 1;
-  overflow-x: auto;
-  overflow-y: hidden;
   scrollbar-width: none;
 }
 
@@ -556,40 +530,37 @@
   display: none;
 }
 
-/* Month label row */
-.streak-month-labels {
-  display: flex;
-  gap: 2px;
-  margin-bottom: 2px;
-  height: 16px;
-}
-
 .streak-month-label-cell {
-  flex: 0 0 11px;
   font-size: 0.6rem;
   color: #555;
   white-space: nowrap;
   overflow: visible;
   line-height: 16px;
+  height: 16px;
+  text-align: center;
+  width: 100%;
 }
 
-/* Main grid: flex-row of week columns */
+/* Main grid: flex-row of week columns stretching across full container */
 .streak-grid {
   display: flex;
-  gap: 2px;
+  gap: 3px;
+  width: 100%;
+  justify-content: space-between;
 }
 
 .streak-grid-col {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  flex-shrink: 0;
+  gap: 3px;
+  min-width: 0;
 }
 
-/* Individual day cell */
+/* Individual day cell: perfectly square and responsive */
 .streak-grid-cell {
-  width: 11px;
-  height: 11px;
+  width: 100%;
+  aspect-ratio: 1;
   border-radius: 2px;
   cursor: default;
   transition: transform 0.12s ease, box-shadow 0.12s ease;
@@ -681,12 +652,46 @@
   color: #444;
 }
 
-/* ── Hint ── */
-.streak-modal-hint {
-  font-size: 0.82rem;
-  color: #555;
+/* ── Streak Navigation Controls ── */
+.streak-nav-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.streak-nav-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #ccc;
+  font-size: 0.6rem;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.streak-nav-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.streak-nav-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.streak-nav-label {
+  font-size: 0.68rem;
+  color: #888;
+  font-weight: 500;
+  min-width: 75px;
   text-align: center;
-  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 /* Animations */

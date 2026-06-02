@@ -101,6 +101,8 @@ export function App() {
   const [authBusy, setAuthBusy]               = useState<boolean>(false);
   const [apiConnected, setApiConnected]       = useState<boolean | null>(null);
   const [isBootstrapped, setIsBootstrapped]   = useState(false);
+  const [countdown, setCountdown]             = useState<number | null>(null);
+  const completionTimeoutRef                 = useRef<number | null>(null);
 
   const speedRef = useRef<number>(3000);
 
@@ -281,6 +283,31 @@ export function App() {
       }
     }
 
+    // Optimistically update activeDates + streak so the grid reflects the session immediately
+    if (combosDelta > 0 && reason !== "unload") {
+      const todayStr = new Date().toISOString().split("T")[0]!;
+      setActiveDates(prev => {
+        const existing = prev.find(d => d.date === todayStr);
+        const updated = existing
+          ? prev.map(d => d.date === todayStr ? { ...d, num_combos: d.num_combos + combosDelta } : d)
+          : [...prev, { date: todayStr, num_combos: combosDelta }];
+
+        // Recompute streak from the updated date set
+        const dateSet = new Set(updated.map(d => d.date));
+        const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0]!;
+        let cursor = dateSet.has(todayStr) ? todayStr : dateSet.has(yesterday) ? yesterday : "";
+        let newStreak = 0;
+        while (cursor && dateSet.has(cursor)) {
+          newStreak++;
+          const d = new Date(cursor + "T12:00:00");
+          d.setDate(d.getDate() - 1);
+          cursor = d.toISOString().split("T")[0]!;
+        }
+        setStreak(newStreak);
+        return updated;
+      });
+    }
+
     if (combosDelta === 0 && durationSeconds === 0) return;
 
     void insertWorkout(
@@ -300,7 +327,7 @@ export function App() {
       },
       { keepalive: options?.keepalive }
     ).catch(() => {});
-  }, []);
+  }, [setActiveDates, setStreak]);
 
   // If the day rolls over while the app is open, clear stored totals so display stays "today only".
   useEffect(() => {
@@ -317,6 +344,52 @@ export function App() {
     const id = window.setInterval(checkDay, 60000); // every minute
     return () => clearInterval(id);
   }, [totalPracticeSeconds, totalPracticeCombos]);
+
+  // Preparation countdown sound helper (offline Web Audio Oscillator)
+  const playBeep = useCallback((freq: number, duration: number) => {
+    try {
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioContextClass) return;
+      const ctx = new AudioContextClass();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      
+      osc.frequency.setValueAtTime(freq, ctx.currentTime);
+      gain.gain.setValueAtTime(0.2, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+      
+      osc.start();
+      osc.stop(ctx.currentTime + duration);
+    } catch {}
+  }, []);
+
+  // ── preparation countdown timer effect ─────────────────────────────────────
+  useEffect(() => {
+    if (countdown === null) return;
+
+    if (countdown > 0) {
+      playBeep(800, 0.15);
+      const id = window.setTimeout(() => {
+        setCountdown(countdown - 1);
+      }, 1000);
+      return () => window.clearTimeout(id);
+    } else {
+      playBeep(1400, 0.4);
+      const id = window.setTimeout(() => {
+        setCountdown(null);
+        startWorkoutSegment();
+        if (mode === "time") {
+          setIsTimerRunning(true);
+        } else {
+          sessionStartMs.current = Date.now();
+          setIsCombosActive(true);
+        }
+      }, 600);
+      return () => window.clearTimeout(id);
+    }
+  }, [countdown, mode, playBeep, startWorkoutSegment]);
 
   // Stable refs so interval callbacks don't go stale
   const timeLeftRef          = useRef<number>(0);
@@ -346,6 +419,19 @@ export function App() {
       // Timer finished
       endWorkoutSegment("complete");
       setIsTimerRunning(false);
+
+      if (completionTimeoutRef.current) window.clearTimeout(completionTimeoutRef.current);
+      completionTimeoutRef.current = window.setTimeout(() => {
+        setTimeLeft(0);
+        setCombosCompleted(0);
+        combosCompletedRef.current = 0;
+        setTotalCombos(0);
+        totalCombosRef.current = 0;
+
+        const nextText = Math.random() < 0.5 ? "Ready" : "Go Again";
+        setCurrentCombo(nextText);
+        completionTimeoutRef.current = null;
+      }, 4000);
     }
     return () => { if (timerRef.current) clearTimeout(timerRef.current); };
   }, [isTimerRunning, timeLeft, endWorkoutSegment]);
@@ -422,10 +508,24 @@ export function App() {
       if (mode === "time" && timeLeftRef.current <= 0) return;
 
       const limit = totalCombosRef.current;
-      if (limit > 0 && combosCompletedRef.current >= limit) {
+        // When total combos limit is reached OR limit is zero (i.e., no combos left), end the session
+        if (limit === 0 || (limit > 0 && combosCompletedRef.current >= limit)) {
         if (mode === "combos") {
           endWorkoutSegment("complete");
           setIsCombosActive(false);
+
+          if (completionTimeoutRef.current) window.clearTimeout(completionTimeoutRef.current);
+          completionTimeoutRef.current = window.setTimeout(() => {
+            setTimeLeft(0);
+            setCombosCompleted(0);
+            combosCompletedRef.current = 0;
+            setTotalCombos(0);
+            totalCombosRef.current = 0;
+
+            const nextText = Math.random() < 0.5 ? "Ready" : "Go Again";
+            setCurrentCombo(nextText);
+            completionTimeoutRef.current = null;
+          }, 4000);
         }
         return;
       }
@@ -752,17 +852,16 @@ export function App() {
   const isSessionActive = mode === "time" ? isTimerRunning : isCombosActive;
 
   const handleStart = () => {
+    if (completionTimeoutRef.current) {
+      window.clearTimeout(completionTimeoutRef.current);
+      completionTimeoutRef.current = null;
+    }
     if (mode === "time") {
       if (!hasStarted) {
         const minutes = parseInt(timeInputMin) || 0;
         const seconds = parseInt(timeInputSec) || 0;
         const total   = minutes * 60 + seconds;
         if (total > 0) {
-          // Play round start bell ONLY on BRAND NEW round
-          const audio = new Audio(bellUrl);
-          audio.volume = 0.6;
-          audio.play().catch(() => {});
-
           currentComboKeysRef.current = null;
           comboTimeRemainingRef.current = 0;
           comboStartedAtRef.current = 0;
@@ -774,8 +873,9 @@ export function App() {
           totalCombosRef.current = 0;
           setTimeLeft(total);
           currentTimerDuration.current = total;
-          startWorkoutSegment();
-          setIsTimerRunning(true);
+          
+          // Trigger preparation countdown
+          setCountdown(3);
         }
       } else {
         startWorkoutSegment();
@@ -785,11 +885,6 @@ export function App() {
       if (!hasStarted) {
         const count = parseInt(comboInput) || 0;
         if (count > 0) {
-          // Play round start bell ONLY on BRAND NEW round
-          const audio = new Audio(bellUrl);
-          audio.volume = 0.6;
-          audio.play().catch(() => {});
-
           currentComboKeysRef.current = null;
           comboTimeRemainingRef.current = 0;
           comboStartedAtRef.current = 0;
@@ -799,9 +894,9 @@ export function App() {
           combosCompletedRef.current = 0;
           setTotalCombos(count);
           totalCombosRef.current = count;
-          sessionStartMs.current = Date.now();
-          startWorkoutSegment();
-          setIsCombosActive(true);
+          
+          // Trigger preparation countdown
+          setCountdown(3);
         }
       } else if (!isCombosActive) {
         sessionStartMs.current = Date.now(); // RESUME
@@ -812,6 +907,11 @@ export function App() {
   };
 
   const handlePause = () => {
+    if (completionTimeoutRef.current) {
+      window.clearTimeout(completionTimeoutRef.current);
+      completionTimeoutRef.current = null;
+    }
+    setCountdown(null);
     if (mode === "time") {
       endWorkoutSegment("pause");
       setIsTimerRunning(false);
@@ -822,6 +922,11 @@ export function App() {
   };
 
   const handleReset = () => {
+    if (completionTimeoutRef.current) {
+      window.clearTimeout(completionTimeoutRef.current);
+      completionTimeoutRef.current = null;
+    }
+    setCountdown(null);
     endWorkoutSegment("reset");
     setIsTimerRunning(false);
     setIsCombosActive(false);
@@ -880,6 +985,7 @@ export function App() {
             isMobile={true}
             username={username}
             onStreakClick={() => { handlePause(); setShowStreakModal(true); }}
+            countdown={countdown}
           />
         )}
 
@@ -996,6 +1102,7 @@ export function App() {
         isMobile={false}
         username={username}
         onStreakClick={() => { handlePause(); setShowStreakModal(true); }}
+        countdown={countdown}
       />
 
       {/* RIGHT has two columns: controls & presets */}
