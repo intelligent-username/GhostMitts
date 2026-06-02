@@ -74,7 +74,8 @@ export function StreakGridModal({ isOpen, onClose, activeDates, streak }: Streak
     return Math.max(0, diffWeeks);
   }, [firstActiveDate, isNewAccount]);
 
-  // Generate the grid – 16 weeks normally, 6 weeks (with 2‑week padding) for brand�  const { weeks, monthLabels } = useMemo(() => {
+  // Generate the grid - 16 weeks normally, 6 weeks (with 2-week padding) for brand-new accounts
+  const { weeks, monthLabels } = useMemo(() => {
     const today = new Date();
     const todayStr = today.toISOString().split("T")[0]!;
 
@@ -234,7 +235,7 @@ export function StreakGridModal({ isOpen, onClose, activeDates, streak }: Streak
     }
 
     return { weeks: weeksArr, monthLabels: monthLabelArr };
-  }, [activeMap, firstActiveDate, weekOffset, isNewAccount]);t, isNewAccount]);
+  }, [activeMap, firstActiveDate, weekOffset, isNewAccount]);
 
   const handleMouseEnter = (
     e: React.MouseEvent,
