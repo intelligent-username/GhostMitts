@@ -17,6 +17,9 @@ compatibility_flags = ["nodejs_compat"]
 binding = "R2_BUCKET"
 bucket_name = "ghostmitts-combo-history"
 
+[assets]
+directory = "../dist"
+
 [vars]
 # Comma-separated browser origins that may call your API (CORS allowlist)
 # Example: "http://localhost:3000,https://your-frontend.com"

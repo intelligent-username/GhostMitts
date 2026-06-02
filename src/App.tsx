@@ -103,6 +103,7 @@ export function App() {
   const [isBootstrapped, setIsBootstrapped]   = useState(false);
   const [countdown, setCountdown]             = useState<number | null>(null);
   const completionTimeoutRef                 = useRef<number | null>(null);
+  const audioCtxRef                          = useRef<AudioContext | null>(null);
 
   const speedRef = useRef<number>(3000);
 
@@ -350,7 +351,13 @@ export function App() {
     try {
       const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
       if (!AudioContextClass) return;
-      const ctx = new AudioContextClass();
+      if (!audioCtxRef.current) {
+        audioCtxRef.current = new AudioContextClass();
+      }
+      const ctx = audioCtxRef.current;
+      if (ctx.state === "suspended") {
+        ctx.resume();
+      }
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.connect(gain);
@@ -406,6 +413,29 @@ export function App() {
   useEffect(() => { combosCompletedRef.current  = combosCompleted; }, [combosCompleted]);
   useEffect(() => { totalCombosRef.current      = totalCombos;     }, [totalCombos]);
 
+  const handleModeChange = (newMode: "time" | "combos") => {
+    if (isTimerRunning || isCombosActive) {
+      endWorkoutSegment("pause");
+    }
+    setMode(newMode);
+    setCountdown(null);
+    setIsTimerRunning(false);
+    setIsCombosActive(false);
+    setTimeLeft(0);
+    setCombosCompleted(0);
+    combosCompletedRef.current = 0;
+    setTotalCombos(0);
+    totalCombosRef.current = 0;
+    setCurrentCombo("");
+    currentComboKeysRef.current = null;
+    comboTimeRemainingRef.current = 0;
+    comboStartedAtRef.current = 0;
+    if (completionTimeoutRef.current) {
+      window.clearTimeout(completionTimeoutRef.current);
+      completionTimeoutRef.current = null;
+    }
+  };
+
   // ── 1-second countdown (time mode) ───────────────────────────────────────
   useEffect(() => {
     if (isTimerRunning && timeLeft > 0) {
@@ -419,6 +449,13 @@ export function App() {
       // Timer finished
       endWorkoutSegment("complete");
       setIsTimerRunning(false);
+
+      // Play final bell
+      const bellAudio = new Audio(bellUrl);
+      bellAudio.volume = 0.8;
+      bellAudio.play().catch(() => {});
+
+      setCurrentCombo("WORKOUT COMPLETE!");
 
       if (completionTimeoutRef.current) window.clearTimeout(completionTimeoutRef.current);
       completionTimeoutRef.current = window.setTimeout(() => {
@@ -470,7 +507,7 @@ export function App() {
   }, [currentMoves]);
 
   // ── audio sequencer & multi-processor ────────────────────────────────────
-  const { playComboAudio, stopAudio } = useAudioSequencer({
+  const { playComboAudio, stopAudio, unlockAudio } = useAudioSequencer({
     useVoiceRef,
     displayModeRef,
     customDisplayKeysRef,
@@ -508,25 +545,30 @@ export function App() {
       if (mode === "time" && timeLeftRef.current <= 0) return;
 
       const limit = totalCombosRef.current;
-        // When total combos limit is reached OR limit is zero (i.e., no combos left), end the session
-        if (limit === 0 || (limit > 0 && combosCompletedRef.current >= limit)) {
-        if (mode === "combos") {
-          endWorkoutSegment("complete");
-          setIsCombosActive(false);
+      // When total combos limit is reached, end the session (combos mode only)
+      if (mode === "combos" && (limit === 0 || combosCompletedRef.current >= limit)) {
+        endWorkoutSegment("complete");
+        setIsCombosActive(false);
 
-          if (completionTimeoutRef.current) window.clearTimeout(completionTimeoutRef.current);
-          completionTimeoutRef.current = window.setTimeout(() => {
-            setTimeLeft(0);
-            setCombosCompleted(0);
-            combosCompletedRef.current = 0;
-            setTotalCombos(0);
-            totalCombosRef.current = 0;
+        // Play final bell
+        const bellAudio = new Audio(bellUrl);
+        bellAudio.volume = 0.8;
+        bellAudio.play().catch(() => {});
 
-            const nextText = Math.random() < 0.5 ? "Ready" : "Go Again";
-            setCurrentCombo(nextText);
-            completionTimeoutRef.current = null;
-          }, 4000);
-        }
+        setCurrentCombo("WORKOUT COMPLETE!");
+
+        if (completionTimeoutRef.current) window.clearTimeout(completionTimeoutRef.current);
+        completionTimeoutRef.current = window.setTimeout(() => {
+          setTimeLeft(0);
+          setCombosCompleted(0);
+          combosCompletedRef.current = 0;
+          setTotalCombos(0);
+          totalCombosRef.current = 0;
+
+          const nextText = Math.random() < 0.5 ? "Ready" : "Go Again";
+          setCurrentCombo(nextText);
+          completionTimeoutRef.current = null;
+        }, 4000);
         return;
       }
 
@@ -852,6 +894,7 @@ export function App() {
   const isSessionActive = mode === "time" ? isTimerRunning : isCombosActive;
 
   const handleStart = () => {
+    unlockAudio();
     if (completionTimeoutRef.current) {
       window.clearTimeout(completionTimeoutRef.current);
       completionTimeoutRef.current = null;
@@ -992,7 +1035,7 @@ export function App() {
         {/* Clean Controls column (without AuthPanel) */}
         <ControlsColumn
           mode={mode}
-          setMode={setMode}
+          setMode={handleModeChange}
           timeInputMin={timeInputMin}
           setTimeInputMin={setTimeInputMin}
           timeInputSec={timeInputSec}
@@ -1111,7 +1154,7 @@ export function App() {
         {/*  Controls column  */}
         <ControlsColumn
           mode={mode}
-          setMode={setMode}
+          setMode={handleModeChange}
           timeInputMin={timeInputMin}
           setTimeInputMin={setTimeInputMin}
           timeInputSec={timeInputSec}

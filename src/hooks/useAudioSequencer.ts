@@ -106,11 +106,10 @@ export function useAudioSequencer({
           return;
         }
 
-        const audio = audioCacheRef.current.get(urlToPlay);
+        let audio = audioCacheRef.current.get(urlToPlay);
         if (!audio) {
-          // Fallback just in case, shouldn't occur given the useEffect
-          playNext(index + 1);
-          return;
+          audio = new Audio(urlToPlay);
+          audioCacheRef.current.set(urlToPlay, audio);
         }
         
         activeAudioRef.current = audio;
@@ -175,5 +174,24 @@ export function useAudioSequencer({
     [currentMoves, displayModeRef, customDisplayKeysRef, useVoiceRef, stopAudio]
   );
 
-  return { playComboAudio, stopAudio };
+  const unlockAudio = useCallback(() => {
+    try {
+      const dummy = new Audio("data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAAA");
+      dummy.play().catch(() => {});
+    } catch {}
+
+    try {
+      audioCacheRef.current.forEach((audio) => {
+        const p = audio.play();
+        if (p !== undefined) {
+          p.then(() => {
+            audio.pause();
+            audio.currentTime = 0;
+          }).catch(() => {});
+        }
+      });
+    } catch {}
+  }, []);
+
+  return { playComboAudio, stopAudio, unlockAudio };
 }
