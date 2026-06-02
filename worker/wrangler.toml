@@ -18,7 +18,7 @@ binding = "R2_BUCKET"
 bucket_name = "ghostmitts-combo-history"
 
 [assets]
-directory = "../dist"
+directory = "./dist"
 
 [vars]
 # Comma-separated browser origins that may call your API (CORS allowlist)

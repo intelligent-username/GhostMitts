@@ -115,11 +115,17 @@ export function useAudioSequencer({
         activeAudioRef.current = audio;
 
         // Reset the tracker head of the internal media element so it plays from the start
-        audio.currentTime = 0;
+        if (audio.readyState > 0) {
+          try {
+            audio.currentTime = 0;
+          } catch {}
+        }
 
         // Force it to play much faster so the whole sequence fits the speed allocation
-        audio.playbackRate = idealPlaybackRate;
-        audio.preservesPitch = true; // supported in modern browsers
+        try {
+          audio.playbackRate = idealPlaybackRate;
+          audio.preservesPitch = true; // supported in modern browsers
+        } catch {}
 
         audio.onended = () => {
           audio.onended = null;
@@ -178,18 +184,6 @@ export function useAudioSequencer({
     try {
       const dummy = new Audio("data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAAA");
       dummy.play().catch(() => {});
-    } catch {}
-
-    try {
-      audioCacheRef.current.forEach((audio) => {
-        const p = audio.play();
-        if (p !== undefined) {
-          p.then(() => {
-            audio.pause();
-            audio.currentTime = 0;
-          }).catch(() => {});
-        }
-      });
     } catch {}
   }, []);
 

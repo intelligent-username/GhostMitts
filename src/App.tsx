@@ -465,8 +465,7 @@ export function App() {
         setTotalCombos(0);
         totalCombosRef.current = 0;
 
-        const nextText = Math.random() < 0.5 ? "Ready" : "Go Again";
-        setCurrentCombo(nextText);
+        setCurrentCombo("WORKOUT COMPLETE!");
         completionTimeoutRef.current = null;
       }, 4000);
     }
@@ -565,8 +564,7 @@ export function App() {
           setTotalCombos(0);
           totalCombosRef.current = 0;
 
-          const nextText = Math.random() < 0.5 ? "Ready" : "Go Again";
-          setCurrentCombo(nextText);
+          setCurrentCombo("WORKOUT COMPLETE!");
           completionTimeoutRef.current = null;
         }, 4000);
         return;
