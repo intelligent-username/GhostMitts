@@ -74,18 +74,32 @@ export function StreakGridModal({ isOpen, onClose, activeDates, streak }: Streak
     return Math.max(0, diffWeeks);
   }, [firstActiveDate, isNewAccount]);
 
-  // Generate the grid – 16 weeks normally, 6 weeks (with 2‑week padding) for brand‑new accounts
-  const { weeks, monthLabels } = useMemo(() => {
+  // Generate the grid – 16 weeks normally, 6 weeks (with 2‑week padding) for brand�  const { weeks, monthLabels } = useMemo(() => {
     const today = new Date();
     const todayStr = today.toISOString().split("T")[0]!;
 
-    // Window size and start/end dates depend on account age
-    const windowDays = isNewAccount ? 42 : 112; // 6 weeks vs 16 weeks
-
     const endDate = new Date();
-    // For normal accounts we scroll back according to weekOffset; for new accounts we keep offset 0
-    if (!isNewAccount) {
+    if (isNewAccount) {
+      // For a new account, we want the grid to end 14 days (2 weeks) after today.
+      // This centers the user's active days in the 6-week window.
+      endDate.setDate(today.getDate() + 14);
+    } else {
+      // For older accounts, scroll normally based on weekOffset
       endDate.setDate(today.getDate() - weekOffset * 7);
+    }
+
+    // Determine the 6-week window boundaries for a new account
+    let newAccountWindowStart = "";
+    let newAccountWindowEnd = "";
+    if (isNewAccount && firstActiveDate) {
+      const firstActiveDateObj = new Date(firstActiveDate + "T00:00:00");
+      const padStart = new Date(firstActiveDateObj.getTime());
+      padStart.setDate(firstActiveDateObj.getDate() - 14); // 2 weeks before first day
+      newAccountWindowStart = padStart.toISOString().split("T")[0]!;
+
+      const padEnd = new Date(today.getTime());
+      padEnd.setDate(today.getDate() + 14); // 2 weeks after current day
+      newAccountWindowEnd = padEnd.toISOString().split("T")[0]!;
     }
 
     const days: Array<{
@@ -96,32 +110,76 @@ export function StreakGridModal({ isOpen, onClose, activeDates, streak }: Streak
       isFirst: boolean;
       isToday: boolean;
       dayOfWeek: number;
+      isPreAccount?: boolean;
+      isFuture?: boolean;
     } | null> = [];
 
-    for (let i = windowDays - 1; i >= 0; i--) {
+    for (let i = 111; i >= 0; i--) {
       const d = new Date(endDate.getTime());
       d.setDate(endDate.getDate() - i);
       const dateStr = d.toISOString().split("T")[0]!;
-      
-      // Apply hard caps: never show dates before the first active day or after today
-      const isBeforeFirst = firstActiveDate && dateStr < firstActiveDate;
-      const isAfterToday = dateStr > todayStr;
 
-      if (isBeforeFirst || isAfterToday) {
-        days.push(null);
+      if (isNewAccount) {
+        // For new accounts, everything outside the 6-week period is empty (null)
+        const isInsideWindow = dateStr >= newAccountWindowStart && dateStr <= newAccountWindowEnd;
+        if (!isInsideWindow) {
+          days.push(null);
+        } else {
+          // Inside the 6-week window:
+          const isPreAccount = firstActiveDate && dateStr < firstActiveDate;
+          const isFuture = dateStr > todayStr;
+          
+          if (isPreAccount || isFuture) {
+            // Plot as normal inactive squares with no combos, so they don't look empty!
+            const label = d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric", year: "numeric" });
+            days.push({
+              dateStr,
+              label,
+              isActive: false,
+              combos: 0,
+              isFirst: false,
+              isToday: false,
+              dayOfWeek: d.getDay(),
+              isPreAccount: true,
+            });
+          } else {
+            // Normal active/inactive range
+            const isActive = activeMap.has(dateStr);
+            const combos = activeMap.get(dateStr) ?? 0;
+            const label = d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric", year: "numeric" });
+            days.push({
+              dateStr,
+              label,
+              isActive,
+              combos,
+              isFirst: dateStr === firstActiveDate,
+              isToday: dateStr === todayStr,
+              dayOfWeek: d.getDay(),
+            });
+          }
+        }
       } else {
-        const isActive = activeMap.has(dateStr);
-        const combos = activeMap.get(dateStr) ?? 0;
-        const label = d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric", year: "numeric" });
-        days.push({
-          dateStr,
-          label,
-          isActive,
-          combos,
-          isFirst: dateStr === firstActiveDate,
-          isToday: dateStr === todayStr,
-          dayOfWeek: d.getDay(),
-        });
+        // For older accounts (> 4 weeks old):
+        // No future or prior-to-first-day dates are displayed
+        const isBeforeFirst = firstActiveDate && dateStr < firstActiveDate;
+        const isAfterToday = dateStr > todayStr;
+
+        if (isBeforeFirst || isAfterToday) {
+          days.push(null);
+        } else {
+          const isActive = activeMap.has(dateStr);
+          const combos = activeMap.get(dateStr) ?? 0;
+          const label = d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric", year: "numeric" });
+          days.push({
+            dateStr,
+            label,
+            isActive,
+            combos,
+            isFirst: dateStr === firstActiveDate,
+            isToday: dateStr === todayStr,
+            dayOfWeek: d.getDay(),
+          });
+        }
       }
     }
 
@@ -135,6 +193,8 @@ export function StreakGridModal({ isOpen, onClose, activeDates, streak }: Streak
       isFirst: boolean;
       isToday: boolean;
       dayOfWeek: number;
+      isPreAccount?: boolean;
+      isFuture?: boolean;
     } | null> = [
       ...Array(firstDayOfWeek).fill(null),
       ...days,
@@ -148,6 +208,8 @@ export function StreakGridModal({ isOpen, onClose, activeDates, streak }: Streak
       isFirst: boolean;
       isToday: boolean;
       dayOfWeek: number;
+      isPreAccount?: boolean;
+      isFuture?: boolean;
     } | null>> = [];
 
     for (let col = 0; col < padded.length; col += 7) {
@@ -172,7 +234,7 @@ export function StreakGridModal({ isOpen, onClose, activeDates, streak }: Streak
     }
 
     return { weeks: weeksArr, monthLabels: monthLabelArr };
-  }, [activeMap, firstActiveDate, weekOffset, isNewAccount]);
+  }, [activeMap, firstActiveDate, weekOffset, isNewAccount]);t, isNewAccount]);
 
   const handleMouseEnter = (
     e: React.MouseEvent,
