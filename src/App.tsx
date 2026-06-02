@@ -117,7 +117,7 @@ export function App() {
   const useVoiceRef = useRef<boolean>(true);
   useEffect(() => { useVoiceRef.current = useVoice; }, [useVoice]);
 
-  const [activeDates, setActiveDates] = useState<string[]>([]);
+  const [activeDates, setActiveDates] = useState<Array<{ date: string; num_combos: number }>>([]);
   const [streak, setStreak] = useState<number>(0);
   const [showStreakModal, setShowStreakModal] = useState<boolean>(false);
 

@@ -59,7 +59,7 @@ export async function getBootstrap() {
     todaySession: null | { date: string; num_combos: number; time_seconds: number };
     presets: Array<{ preset_name: string; preset_data: unknown }>;
     streak: number;
-    activeDates?: string[];
+    activeDates?: Array<{ date: string; num_combos: number }>;
   }>("/bootstrap", { method: "GET" });
 }
 

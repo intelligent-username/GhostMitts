@@ -335,9 +335,9 @@ export default {
           "SELECT preset_name, preset_data FROM presets WHERE username = ?",
           [auth.username]
         ),
-        dbAll<{ date: string }>(
+        dbAll<{ date: string; num_combos: number }>(
           env,
-          "SELECT date FROM sessions WHERE username = ? AND (num_combos > 0 OR time_seconds > 0) ORDER BY date DESC LIMIT 400",
+          "SELECT date, num_combos FROM sessions WHERE username = ? AND (num_combos > 0 OR time_seconds > 0) ORDER BY date DESC LIMIT 400",
           [auth.username]
         ),
       ]);
@@ -352,6 +352,9 @@ export default {
 
       const dates = activeDays.map(r => r.date).filter(Boolean);
       const streak = computeStreakFromDates(dates);
+      const activeDateRecords = activeDays
+        .filter(r => r.date)
+        .map(r => ({ date: r.date, num_combos: Number(r.num_combos) || 0 }));
 
       return json(
         {
@@ -359,7 +362,7 @@ export default {
           todaySession: todaySession ?? null,
           presets,
           streak,
-          activeDates: dates,
+          activeDates: activeDateRecords,
         },
         200,
         corsHeaders(allowedOrigin, request)
