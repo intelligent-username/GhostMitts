@@ -47,7 +47,7 @@ const server = serve({
     // Serve static audio files
     "/voicegen/*": req => {
       const path = new URL(req.url).pathname;
-      return new Response(Bun.file("." + path));
+      return new Response(Bun.file("./src/public" + path));
     },
 
     // Serve index.html for all unmatched routes.

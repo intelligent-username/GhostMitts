@@ -3,9 +3,6 @@ import asyncio
 import edge_tts
 
 VOICE_ID = "en-US-GuyNeural" 
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-OUTPUT_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, "..", "src", "public", "voicegen", VOICE_ID))
-
 WORDS = [
     "ONE", "TWO", "THREE", "FOUR", "FIVE", "SIX", "SEVEN", "EIGHT", "NINE", "TEN",
     "ELEVEN", "TWELVE", "THIRTEEN", "FOURTEEN", "FIFTEEN", "SIXTEEN", "SEVENTEEN", "EIGHTEEN", "NINETEEN", "TWENTY",
@@ -18,7 +15,7 @@ WORDS = [
     "LEFT ELBOW", "RIGHT ELBOW",
 ]
 
-os.makedirs(OUTPUT_DIR, exist_ok=True)
+os.makedirs(VOICE_ID, exist_ok=True)
 
 async def generate_countdown():
     for i, word in enumerate(WORDS, start=1):
@@ -26,8 +23,8 @@ async def generate_countdown():
         print(f"Generating aggressive: {word}...")
         import subprocess
 
-        file_path_mp3 = os.path.join(OUTPUT_DIR, f"{filename}.mp3")
-        file_path_ogg = os.path.join(OUTPUT_DIR, f"{filename}.ogg")
+        file_path_mp3 = os.path.join(VOICE_ID, f"{filename}.mp3")
+        file_path_ogg = os.path.join(VOICE_ID, f"{filename}.ogg")
         
         communicate = edge_tts.Communicate(
             word, 

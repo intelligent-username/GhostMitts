@@ -66,6 +66,14 @@ export function App() {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
+  const bellAudioRef                         = useRef<HTMLAudioElement | null>(null);
+  const drumsAudioRef                        = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    bellAudioRef.current = new Audio(bellUrl);
+    drumsAudioRef.current = new Audio(drumsUrl);
+  }, []);
+
   const [mode, setMode] = useState<"time" | "combos">("time");
 
   const [selectedPreset, setSelectedPreset] = useState<PresetKey>("Boxing");
@@ -439,10 +447,9 @@ export function App() {
   // ── 1-second countdown (time mode) ───────────────────────────────────────
   useEffect(() => {
     if (isTimerRunning && timeLeft > 0) {
-      if (timeLeft === 10) {
-        const audio = new Audio(drumsUrl);
-        audio.volume = 0.6;
-        audio.play().catch(() => {});
+      if (timeLeft === 10 && drumsAudioRef.current) {
+        drumsAudioRef.current.volume = 0.6;
+        drumsAudioRef.current.play().catch(() => {});
       }
       timerRef.current = window.setTimeout(() => setTimeLeft(p => p - 1), 1000);
     } else if (timeLeft === 0 && isTimerRunning) {
@@ -451,9 +458,10 @@ export function App() {
       setIsTimerRunning(false);
 
       // Play final bell
-      const bellAudio = new Audio(bellUrl);
-      bellAudio.volume = 0.8;
-      bellAudio.play().catch(() => {});
+      if (bellAudioRef.current) {
+        bellAudioRef.current.volume = 0.8;
+        bellAudioRef.current.play().catch(() => {});
+      }
 
       setCurrentCombo("WORKOUT COMPLETE!");
 
@@ -550,9 +558,10 @@ export function App() {
         setIsCombosActive(false);
 
         // Play final bell
-        const bellAudio = new Audio(bellUrl);
-        bellAudio.volume = 0.8;
-        bellAudio.play().catch(() => {});
+        if (bellAudioRef.current) {
+          bellAudioRef.current.volume = 0.8;
+          bellAudioRef.current.play().catch(() => {});
+        }
 
         setCurrentCombo("WORKOUT COMPLETE!");
 
@@ -893,6 +902,36 @@ export function App() {
 
   const handleStart = () => {
     unlockAudio();
+    
+    // Synchronously initialize and resume Web Audio Context in direct user click handler
+    try {
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      if (AudioContextClass) {
+        if (!audioCtxRef.current) {
+          audioCtxRef.current = new AudioContextClass();
+        }
+        if (audioCtxRef.current.state === "suspended") {
+          audioCtxRef.current.resume();
+        }
+      }
+    } catch {}
+
+    // Synchronously play and pause cached bell & drums Audio elements to unlock them for iOS/Chrome
+    try {
+      if (bellAudioRef.current) {
+        bellAudioRef.current.play().then(() => {
+          bellAudioRef.current?.pause();
+          bellAudioRef.current!.currentTime = 0;
+        }).catch(() => {});
+      }
+      if (drumsAudioRef.current) {
+        drumsAudioRef.current.play().then(() => {
+          drumsAudioRef.current?.pause();
+          drumsAudioRef.current!.currentTime = 0;
+        }).catch(() => {});
+      }
+    } catch {}
+
     if (completionTimeoutRef.current) {
       window.clearTimeout(completionTimeoutRef.current);
       completionTimeoutRef.current = null;
@@ -960,6 +999,14 @@ export function App() {
       endWorkoutSegment("pause");
       setIsCombosActive(false);
     }
+    if (bellAudioRef.current) {
+      bellAudioRef.current.pause();
+      bellAudioRef.current.currentTime = 0;
+    }
+    if (drumsAudioRef.current) {
+      drumsAudioRef.current.pause();
+      drumsAudioRef.current.currentTime = 0;
+    }
   };
 
   const handleReset = () => {
@@ -982,6 +1029,15 @@ export function App() {
     currentComboKeysRef.current = null;
     comboTimeRemainingRef.current = 0;
     comboStartedAtRef.current = 0;
+
+    if (bellAudioRef.current) {
+      bellAudioRef.current.pause();
+      bellAudioRef.current.currentTime = 0;
+    }
+    if (drumsAudioRef.current) {
+      drumsAudioRef.current.pause();
+      drumsAudioRef.current.currentTime = 0;
+    }
   };
 
   //  Render
