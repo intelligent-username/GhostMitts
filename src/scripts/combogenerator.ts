@@ -44,10 +44,6 @@ export interface ComboOptions {
   weights?: Record<number, number>;
 }
 
-function randInt(min: number, max: number): number {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
 function weightedPick(items: ReadonlyArray<{ value: number; weight: number }>): number {
   let total = 0;
   for (const item of items) total += item.weight;
@@ -171,26 +167,4 @@ export function generateCombo(opts: ComboOptions): number[] {
   }
 
   return combo;
-}
-
-export function generateCombos(
-  count: number,
-  opts: ComboOptions,
-  maxTries = count * 20,
-): number[][] {
-  const seen = new Set<string>();
-  const results: number[][] = [];
-  let attempts = 0;
-
-  while (results.length < count && attempts < maxTries) {
-    attempts++;
-    const combo = generateCombo(opts);
-    const sig = combo.join("-");
-    if (!seen.has(sig)) {
-      seen.add(sig);
-      results.push(combo);
-    }
-  }
-
-  return results;
 }

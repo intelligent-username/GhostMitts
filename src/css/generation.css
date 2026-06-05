@@ -206,10 +206,6 @@
   background: #09090a;
 }
 
-.generation-viz-bar {
-  fill: rgba(76, 175, 80, 0.28);
-}
-
 .generation-viz-line {
   fill: none;
   stroke: #4CAF50;
@@ -254,37 +250,6 @@
   padding: 0.2rem 0.5rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-}
-
-.generation-length-bars {
-  display: flex;
-  align-items: flex-end;
-  gap: 0.35rem;
-  min-height: 150px;
-  padding: 0.3rem;
-  border-radius: 8px;
-  background: #09090a;
-}
-
-.generation-length-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.35rem;
-  flex: 1;
-}
-
-.generation-length-fill {
-  width: 100%;
-  max-width: 26px;
-  border-radius: 6px 6px 2px 2px;
-  background: linear-gradient(180deg, rgba(76, 175, 80, 0.9) 0%, rgba(76, 175, 80, 0.25) 100%);
-}
-
-.generation-length-label {
-  color: #6a6a6a;
-  font-size: 0.7rem;
-  font-weight: 700;
 }
 
 .generation-viz-footnote {

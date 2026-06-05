@@ -22,14 +22,6 @@ export const REAR_MOVES = [
   "RIGHT ELBOW",
 ];
 
-export const NUMBER_WORDS: Record<number, string> = {
-  1: "ONE", 2: "TWO", 3: "THREE", 4: "FOUR", 5: "FIVE",
-  6: "SIX", 7: "SEVEN", 8: "EIGHT", 9: "NINE", 10: "TEN",
-  11: "ELEVEN", 12: "TWELVE", 13: "THIRTEEN", 14: "FOURTEEN",
-  15: "FIFTEEN", 16: "SIXTEEN", 17: "SEVENTEEN", 18: "EIGHTEEN",
-  19: "NINETEEN", 20: "TWENTY"
-};
-
 export const NUMBER_AUDIO_MAP: Record<number, string> = {
   1: "n01_ONE.ogg", 2: "n02_TWO.ogg", 3: "n03_THREE.ogg", 4: "n04_FOUR.ogg",
   5: "n05_FIVE.ogg", 6: "n06_SIX.ogg", 7: "n07_SEVEN.ogg", 8: "n08_EIGHT.ogg",
@@ -139,3 +131,9 @@ export const DEFAULT_PRESETS: Record<PresetKey, Move[]> = {
 };
 
 export const movesForSlot = (key: number) => key % 2 === 1 ? FRONT_MOVES : REAR_MOVES;
+
+export function formatMinutes(totalSeconds: number): string {
+  return totalSeconds > 0
+    ? (totalSeconds / 60).toFixed(1).replace(/\.0$/, "")
+    : "0";
+}

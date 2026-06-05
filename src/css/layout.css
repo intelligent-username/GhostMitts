@@ -304,30 +304,6 @@
   padding-bottom: 4rem;
 }
 
-.mobile-settings-toggles {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 16px;
-  padding: 1.2rem;
-}
-
-.mobile-settings-toggles .fullname-toggle {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-direction: row-reverse;
-  margin: 0;
-  width: 100%;
-}
-
-.mobile-auth-wrapper {
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-  padding-top: 1.5rem;
-}
-
 /* Ensure controls stack cleanly inside single column on mobile */
 @media (max-width: 768px) {
   .mobile-container .controls-col {
@@ -383,7 +359,7 @@
   max-width: 520px;
   padding: 1.75rem;
   box-shadow: 0 24px 64px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255,255,255,0.04);
-  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: slideUpFade 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   box-sizing: border-box;
 }
 
@@ -700,7 +676,7 @@
   to { opacity: 1; }
 }
 
-@keyframes slideUp {
+@keyframes slideUpFade {
   from { transform: translateY(20px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
 }

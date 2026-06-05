@@ -1,3 +1,5 @@
+import { formatMinutes } from "../utils/constants";
+
 interface LeftDisplayProps {
   mode: "time" | "combos";
   isTimerRunning: boolean;
@@ -5,7 +7,6 @@ interface LeftDisplayProps {
   isCombosActive: boolean;
   combosCompleted: number;
   totalCombos: number;
-  onTabClick: () => void;
   totalPracticeSeconds: number;
   totalPracticeCombos: number;
   currentCombo: string;
@@ -22,7 +23,6 @@ export function LeftDisplay({
   isCombosActive,
   combosCompleted,
   totalCombos,
-  onTabClick,
   totalPracticeSeconds,
   totalPracticeCombos,
   currentCombo,
@@ -37,9 +37,7 @@ export function LeftDisplay({
     return `${m}:${s.toString().padStart(2, "0")}`;
   };
 
-  const totalMins = totalPracticeSeconds > 0
-    ? (totalPracticeSeconds / 60).toFixed(1).replace(/\.0$/, "")
-    : "0";
+  const totalMins = formatMinutes(totalPracticeSeconds);
 
   const renderContent = () => {
     if (countdown !== null) {
@@ -102,7 +100,7 @@ export function LeftDisplay({
   }
 
   return (
-    <div className="left-tab" onClick={onTabClick}>
+    <div className="left-tab">
       {renderContent()}
  
       {/* Bottom bar container for title and totals */}

@@ -2,7 +2,7 @@ const LS_SECONDS = "gm_totalPracticeSeconds";
 const LS_COMBOS  = "gm_totalPracticeCombos";
 const LS_GEN_SETTINGS = "gm_genSettings";
 
-function todayStr() {
+export function todayStr() {
   const d = new Date();
   return d.toISOString().split("T")[0];
 }
@@ -23,14 +23,6 @@ export function saveTotalSeconds(val: number) {
 
 export function saveTotalCombos(val: number) {
   saveRecord(LS_COMBOS, val);
-}
-
-export function loadGenSettings(): string | null {
-  try {
-    return localStorage.getItem(LS_GEN_SETTINGS);
-  } catch {
-    return null;
-  }
 }
 
 export function saveGenSettings(val: string) {

@@ -6,7 +6,6 @@ import "./css/controls.css";
 import "./css/presets.css";
 import "./css/generation.css";
 import "./css/auth.css";
-import "./css/toggles.css";
 import "./css/display.css";
 import { generateCombo } from "./scripts/combogenerator";
 import { LeftDisplay } from "./components/LeftDisplay";
@@ -15,8 +14,8 @@ import { PresetsColumn } from "./components/PresetsColumn";
 import { AuthPanel } from "./components/AuthPanel";
 import { StreakGridModal } from "./components/StreakGridModal";
 import type { Move, PresetKey, GenerationSettings, DisplayMode } from "./types";
-import { DEFAULT_PRESETS, MAX_SLOTS, movesForSlot } from "./utils/constants";
-import { loadTotalSeconds, loadTotalCombos, saveTotalSeconds, saveTotalCombos, loadGenSettings, saveGenSettings } from "./utils/storage";
+import { DEFAULT_PRESETS, MAX_SLOTS, movesForSlot, formatMinutes } from "./utils/constants";
+import { loadTotalSeconds, loadTotalCombos, saveTotalSeconds, saveTotalCombos, saveGenSettings, todayStr } from "./utils/storage";
 import { useAudioSequencer } from "./hooks/useAudioSequencer";
 import { getBootstrap, getMe, insertWorkout, loginAccount, logoutAccount, registerAccount, upsertDailySession, upsertPreset } from "./utils/api";
 import bellUrl from "./assets/bell.ogg";
@@ -47,7 +46,7 @@ function areMovesEqual(a: Move[], b: Move[]): boolean {
 }
 
 const SettingsIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="settings-svg">
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
     <circle cx="12" cy="12" r="3"/>
     <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
   </svg>
@@ -163,10 +162,52 @@ export function App() {
     if (!uname) return;
     const seconds = overrideSec !== undefined ? overrideSec : totalPracticeSecondsRef.current;
     const combos = overrideCombos !== undefined ? overrideCombos : totalPracticeCombosRef.current;
-    const date = new Date().toISOString().split("T")[0]!;
+    const date = todayStr();
     void upsertDailySession({ date, num_combos: combos, time_seconds: seconds }).catch(() => {});
   }, []);
   useEffect(() => { saveTotalCombos(totalPracticeCombos);  }, [totalPracticeCombos]);
+
+  const applyBootstrap = useCallback((boot: Awaited<ReturnType<typeof getBootstrap>>) => {
+    if (boot.todaySession) {
+      setTotalPracticeSeconds(Math.max(0, Number(boot.todaySession.time_seconds || 0)));
+      setTotalPracticeCombos(Math.max(0, Number(boot.todaySession.num_combos || 0)));
+    }
+    if (boot.streak !== undefined) setStreak(boot.streak);
+    if (boot.activeDates) setActiveDates(boot.activeDates);
+
+    const presetMap = new Map<PresetKey, { moves?: Move[]; generationSettings?: GenerationSettings }>();
+    for (const p of boot.presets) {
+      if (p.preset_name === "Boxing" || p.preset_name === "Kickboxing" || p.preset_name === "Muay Thai" || p.preset_name === "MMA") {
+        const data = p.preset_data as any;
+        presetMap.set(p.preset_name, {
+          moves: Array.isArray(data?.moves) ? data.moves : undefined,
+          generationSettings: data?.generationSettings,
+        });
+      }
+    }
+
+    if (presetMap.size > 0) {
+      setCustomMoves(prev => {
+        const next = { ...prev };
+        for (const [key, val] of presetMap.entries()) {
+          if (val.moves && Array.isArray(val.moves)) {
+            next[key] = val.moves as Move[];
+          }
+        }
+        return next;
+      });
+
+      setGenerationSettingsMap(prev => {
+        const next = { ...prev };
+        for (const [key, val] of presetMap.entries()) {
+          if (val.generationSettings && typeof val.generationSettings === "object") {
+            next[key] = val.generationSettings as GenerationSettings;
+          }
+        }
+        return next;
+      });
+    }
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -179,52 +220,9 @@ export function App() {
           try {
             const boot = await getBootstrap();
             if (!mounted) return;
-            if (boot.todaySession) {
-              setTotalPracticeSeconds(Math.max(0, Number(boot.todaySession.time_seconds || 0)));
-              setTotalPracticeCombos(Math.max(0, Number(boot.todaySession.num_combos || 0)));
-            }
-            if (boot.streak !== undefined) {
-              setStreak(boot.streak);
-            }
-            if (boot.activeDates) {
-              setActiveDates(boot.activeDates);
-            }
-
-            const presetMap = new Map<PresetKey, { moves?: Move[]; generationSettings?: GenerationSettings }>();
-            for (const p of boot.presets) {
-              if (p.preset_name === "Boxing" || p.preset_name === "Kickboxing" || p.preset_name === "Muay Thai" || p.preset_name === "MMA") {
-                const data = p.preset_data as any;
-                presetMap.set(p.preset_name, {
-                  moves: Array.isArray(data?.moves) ? data.moves : undefined,
-                  generationSettings: data?.generationSettings,
-                });
-              }
-            }
-
-            if (presetMap.size > 0) {
-              setCustomMoves(prev => {
-                const next = { ...prev };
-                for (const [key, val] of presetMap.entries()) {
-                  if (val.moves && Array.isArray(val.moves)) {
-                    next[key] = val.moves as Move[];
-                  }
-                }
-                return next;
-              });
-
-              setGenerationSettingsMap(prev => {
-                const next = { ...prev };
-                for (const [key, val] of presetMap.entries()) {
-                  if (val.generationSettings && typeof val.generationSettings === "object") {
-                    next[key] = val.generationSettings as GenerationSettings;
-                  }
-                }
-                return next;
-              });
-            }
+            applyBootstrap(boot);
             if (mounted) setIsBootstrapped(true);
           } catch {
-            // Ignore bootstrap failures (API reachable but user data unavailable)
             if (mounted) setIsBootstrapped(true);
           }
         } else {
@@ -238,7 +236,7 @@ export function App() {
       }
     })();
     return () => { mounted = false; };
-  }, []);
+  }, [applyBootstrap]);
 
   // ── workout segment logging (detailed session storage) ───────────────────
   const activeWorkoutStartMsRef = useRef<number | null>(null);
@@ -294,17 +292,16 @@ export function App() {
 
     // Optimistically update activeDates + streak so the grid reflects the session immediately
     if (combosDelta > 0 && reason !== "unload") {
-      const todayStr = new Date().toISOString().split("T")[0]!;
+      const ts = todayStr();
       setActiveDates(prev => {
-        const existing = prev.find(d => d.date === todayStr);
+        const existing = prev.find(d => d.date === ts);
         const updated = existing
-          ? prev.map(d => d.date === todayStr ? { ...d, num_combos: d.num_combos + combosDelta } : d)
-          : [...prev, { date: todayStr, num_combos: combosDelta }];
+          ? prev.map(d => d.date === ts ? { ...d, num_combos: d.num_combos + combosDelta } : d)
+          : [...prev, { date: ts, num_combos: combosDelta }];
 
-        // Recompute streak from the updated date set
         const dateSet = new Set(updated.map(d => d.date));
         const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0]!;
-        let cursor = dateSet.has(todayStr) ? todayStr : dateSet.has(yesterday) ? yesterday : "";
+        let cursor = dateSet.has(ts) ? ts : dateSet.has(yesterday) ? yesterday : "";
         let newStreak = 0;
         while (cursor && dateSet.has(cursor)) {
           newStreak++;
@@ -355,17 +352,23 @@ export function App() {
   }, [totalPracticeSeconds, totalPracticeCombos]);
 
   // Preparation countdown sound helper (offline Web Audio Oscillator)
+  const ensureAudioContext = () => {
+    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioContextClass) return null;
+    if (!audioCtxRef.current) {
+      audioCtxRef.current = new AudioContextClass();
+    }
+    const ctx = audioCtxRef.current;
+    if (ctx.state === "suspended") {
+      ctx.resume();
+    }
+    return ctx;
+  };
+
   const playBeep = useCallback((freq: number, duration: number) => {
     try {
-      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-      if (!AudioContextClass) return;
-      if (!audioCtxRef.current) {
-        audioCtxRef.current = new AudioContextClass();
-      }
-      const ctx = audioCtxRef.current;
-      if (ctx.state === "suspended") {
-        ctx.resume();
-      }
+      const ctx = ensureAudioContext();
+      if (!ctx) return;
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.connect(gain);
@@ -444,6 +447,40 @@ export function App() {
     }
   };
 
+  const stopBellDrums = () => {
+    if (bellAudioRef.current) {
+      bellAudioRef.current.pause();
+      bellAudioRef.current.currentTime = 0;
+    }
+    if (drumsAudioRef.current) {
+      drumsAudioRef.current.pause();
+      drumsAudioRef.current.currentTime = 0;
+    }
+  };
+
+  const handleWorkoutComplete = useCallback(() => {
+    endWorkoutSegment("complete");
+
+    if (bellAudioRef.current) {
+      bellAudioRef.current.volume = 0.8;
+      bellAudioRef.current.play().catch(() => {});
+    }
+
+    setCurrentCombo("WORKOUT COMPLETE!");
+
+    if (completionTimeoutRef.current) window.clearTimeout(completionTimeoutRef.current);
+    completionTimeoutRef.current = window.setTimeout(() => {
+      setTimeLeft(0);
+      setCombosCompleted(0);
+      combosCompletedRef.current = 0;
+      setTotalCombos(0);
+      totalCombosRef.current = 0;
+
+      setCurrentCombo("WORKOUT COMPLETE!");
+      completionTimeoutRef.current = null;
+    }, 4000);
+  }, [endWorkoutSegment]);
+
   // ── 1-second countdown (time mode) ───────────────────────────────────────
   useEffect(() => {
     if (isTimerRunning && timeLeft > 0) {
@@ -453,32 +490,11 @@ export function App() {
       }
       timerRef.current = window.setTimeout(() => setTimeLeft(p => p - 1), 1000);
     } else if (timeLeft === 0 && isTimerRunning) {
-      // Timer finished
-      endWorkoutSegment("complete");
       setIsTimerRunning(false);
-
-      // Play final bell
-      if (bellAudioRef.current) {
-        bellAudioRef.current.volume = 0.8;
-        bellAudioRef.current.play().catch(() => {});
-      }
-
-      setCurrentCombo("WORKOUT COMPLETE!");
-
-      if (completionTimeoutRef.current) window.clearTimeout(completionTimeoutRef.current);
-      completionTimeoutRef.current = window.setTimeout(() => {
-        setTimeLeft(0);
-        setCombosCompleted(0);
-        combosCompletedRef.current = 0;
-        setTotalCombos(0);
-        totalCombosRef.current = 0;
-
-        setCurrentCombo("WORKOUT COMPLETE!");
-        completionTimeoutRef.current = null;
-      }, 4000);
+      handleWorkoutComplete();
     }
     return () => { if (timerRef.current) clearTimeout(timerRef.current); };
-  }, [isTimerRunning, timeLeft, endWorkoutSegment]);
+  }, [isTimerRunning, timeLeft, handleWorkoutComplete]);
 
   // ── helpers (must be before the interval effect that uses getCombo) ───────
   const currentMoves = customMoves[selectedPreset];
@@ -554,28 +570,8 @@ export function App() {
       const limit = totalCombosRef.current;
       // When total combos limit is reached, end the session (combos mode only)
       if (mode === "combos" && (limit === 0 || combosCompletedRef.current >= limit)) {
-        endWorkoutSegment("complete");
         setIsCombosActive(false);
-
-        // Play final bell
-        if (bellAudioRef.current) {
-          bellAudioRef.current.volume = 0.8;
-          bellAudioRef.current.play().catch(() => {});
-        }
-
-        setCurrentCombo("WORKOUT COMPLETE!");
-
-        if (completionTimeoutRef.current) window.clearTimeout(completionTimeoutRef.current);
-        completionTimeoutRef.current = window.setTimeout(() => {
-          setTimeLeft(0);
-          setCombosCompleted(0);
-          combosCompletedRef.current = 0;
-          setTotalCombos(0);
-          totalCombosRef.current = 0;
-
-          setCurrentCombo("WORKOUT COMPLETE!");
-          completionTimeoutRef.current = null;
-        }, 4000);
+        handleWorkoutComplete();
         return;
       }
 
@@ -660,7 +656,7 @@ export function App() {
       }
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, isTimerRunning, isCombosActive, speed, comboToString, playComboAudio, replenishQueue, endWorkoutSegment, currentMoves]);
+  }, [mode, isTimerRunning, isCombosActive, speed, comboToString, playComboAudio, replenishQueue, handleWorkoutComplete, currentMoves]);
 
   // ── preset mutations ──────────────────────────────────────────────────────
   const updatePreset = (moves: Move[]) =>
@@ -724,18 +720,13 @@ export function App() {
 
       try {
         const boot = await getBootstrap();
-        if (boot.todaySession) {
-          setTotalPracticeSeconds(Math.max(0, Number(boot.todaySession.time_seconds || 0)));
-          setTotalPracticeCombos(Math.max(0, Number(boot.todaySession.num_combos || 0)));
-        }
-        if (boot.streak !== undefined) setStreak(boot.streak);
-        if (boot.activeDates) setActiveDates(boot.activeDates);
+        applyBootstrap(boot);
       } catch {}
       setIsBootstrapped(true);
     } finally {
       setAuthBusy(false);
     }
-  }, []);
+  }, [applyBootstrap]);
 
   const handleLogin = useCallback(async (nextUsername: string, password: string) => {
     setAuthBusy(true);
@@ -744,53 +735,15 @@ export function App() {
       setUsername(res.username ?? nextUsername);
       setApiConnected(true);
 
-       try {
+      try {
         const boot = await getBootstrap();
-        if (boot.todaySession) {
-          setTotalPracticeSeconds(Math.max(0, Number(boot.todaySession.time_seconds || 0)));
-          setTotalPracticeCombos(Math.max(0, Number(boot.todaySession.num_combos || 0)));
-        }
-        if (boot.streak !== undefined) setStreak(boot.streak);
-        if (boot.activeDates) setActiveDates(boot.activeDates);
-
-        const presetMap = new Map<PresetKey, { moves?: Move[]; generationSettings?: GenerationSettings }>();
-        for (const p of boot.presets) {
-          if (p.preset_name === "Boxing" || p.preset_name === "Kickboxing" || p.preset_name === "Muay Thai" || p.preset_name === "MMA") {
-            const data = p.preset_data as any;
-            presetMap.set(p.preset_name, {
-              moves: Array.isArray(data?.moves) ? data.moves : undefined,
-              generationSettings: data?.generationSettings,
-            });
-          }
-        }
-
-        if (presetMap.size > 0) {
-          setCustomMoves(prev => {
-            const next = { ...prev };
-            for (const [key, val] of presetMap.entries()) {
-              if (val.moves && Array.isArray(val.moves)) {
-                next[key] = val.moves as Move[];
-              }
-            }
-            return next;
-          });
-
-          setGenerationSettingsMap(prev => {
-            const next = { ...prev };
-            for (const [key, val] of presetMap.entries()) {
-              if (val.generationSettings && typeof val.generationSettings === "object") {
-                next[key] = val.generationSettings as GenerationSettings;
-              }
-            }
-            return next;
-          });
-        }
+        applyBootstrap(boot);
       } catch {}
       setIsBootstrapped(true);
     } finally {
       setAuthBusy(false);
     }
-  }, []);
+  }, [applyBootstrap]);
 
   const handleLogout = useCallback(async () => {
     setAuthBusy(true);
@@ -840,9 +793,9 @@ export function App() {
     const genNonDefault = !isDefaultGenerationSettings(gen);
 
     // Only save if there is something meaningfully non-default.
-    if (!totalsNonDefault && !genNonDefault && !movesNonDefault) return;
+    if (!totalsNonDefault && !genNonDefault) return;
 
-    const date = new Date().toISOString().split("T")[0]!;
+    const date = todayStr();
 
     if (totalsNonDefault) {
       void upsertDailySession(
@@ -905,15 +858,7 @@ export function App() {
     
     // Synchronously initialize and resume Web Audio Context in direct user click handler
     try {
-      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-      if (AudioContextClass) {
-        if (!audioCtxRef.current) {
-          audioCtxRef.current = new AudioContextClass();
-        }
-        if (audioCtxRef.current.state === "suspended") {
-          audioCtxRef.current.resume();
-        }
-      }
+      ensureAudioContext();
     } catch {}
 
     // Synchronously play and pause cached bell & drums Audio elements to unlock them for iOS/Chrome
@@ -999,14 +944,7 @@ export function App() {
       endWorkoutSegment("pause");
       setIsCombosActive(false);
     }
-    if (bellAudioRef.current) {
-      bellAudioRef.current.pause();
-      bellAudioRef.current.currentTime = 0;
-    }
-    if (drumsAudioRef.current) {
-      drumsAudioRef.current.pause();
-      drumsAudioRef.current.currentTime = 0;
-    }
+    stopBellDrums();
   };
 
   const handleReset = () => {
@@ -1030,21 +968,12 @@ export function App() {
     comboTimeRemainingRef.current = 0;
     comboStartedAtRef.current = 0;
 
-    if (bellAudioRef.current) {
-      bellAudioRef.current.pause();
-      bellAudioRef.current.currentTime = 0;
-    }
-    if (drumsAudioRef.current) {
-      drumsAudioRef.current.pause();
-      drumsAudioRef.current.currentTime = 0;
-    }
+    stopBellDrums();
   };
 
   //  Render
   if (isMobile) {
-    const totalMins = totalPracticeSeconds > 0
-      ? (totalPracticeSeconds / 60).toFixed(1).replace(/\.0$/, "")
-      : "0";
+    const totalMins = formatMinutes(totalPracticeSeconds);
 
     return (
       <div className="app-container mobile-container">
@@ -1075,7 +1004,6 @@ export function App() {
             isCombosActive={isCombosActive}
             combosCompleted={combosCompleted}
             totalCombos={totalCombos}
-            onTabClick={() => {}}
             totalPracticeSeconds={totalPracticeSeconds}
             totalPracticeCombos={totalPracticeCombos}
             currentCombo={currentCombo}
@@ -1192,7 +1120,6 @@ export function App() {
         isCombosActive={isCombosActive}
         combosCompleted={combosCompleted}
         totalCombos={totalCombos}
-        onTabClick={() => {}}
         totalPracticeSeconds={totalPracticeSeconds}
         totalPracticeCombos={totalPracticeCombos}
         currentCombo={currentCombo}

@@ -233,14 +233,6 @@
   color: #ccc;
 }
 
-.punch-hand {
-  font-size: 0.72rem;
-  font-weight: 500;
-  color: #444;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
 /* Editable name select inside punch row */
 .punch-name-select {
   appearance: none;

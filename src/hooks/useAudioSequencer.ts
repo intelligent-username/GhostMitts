@@ -41,7 +41,7 @@ export function useAudioSequencer({
       }
     };
 
-    // Preload all standard number strings (1-20 via NUMBER_WORDS)
+    // Preload all standard number strings (1-20)
     Object.values(NUMBER_AUDIO_MAP).forEach((filename) => {
       preloadTrack(`/voicegen/en-US-GuyNeural/${filename}`);
     });

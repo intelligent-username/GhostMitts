@@ -387,7 +387,7 @@ export function StreakGridModal({ isOpen, onClose, activeDates, streak }: Streak
         </div>
 
         {/* Hint */}
-        <p className="streak-modal-hint">
+        <p>
           {activeDates.length === 0
             ? "Start a session today to build your practice streak!"
             : "\"People need to be reminded more often than they need to be instructed.\""}
@@ -411,7 +411,7 @@ export function StreakGridModal({ isOpen, onClose, activeDates, streak }: Streak
             <div className="streak-tooltip-rest">Rest day</div>
           )}
           {tooltip.isFirst && (
-            <div className="streak-tooltip-first" style={{ color: '#ffd700', fontSize: '0.72rem', fontWeight: 'bold', marginTop: '0.2rem' }}>
+            <div style={{ color: '#ffd700', fontSize: '0.72rem', fontWeight: 'bold', marginTop: '0.2rem' }}>
               First Day
             </div>
           )}

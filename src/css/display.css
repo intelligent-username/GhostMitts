@@ -45,24 +45,6 @@
   max-width: 90%;
 }
 
-.generated-combos-list {
-  margin-top: 1rem;
-  max-height: 12rem;
-  width: min(38rem, 90%);
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.35rem;
-}
-
-.generated-combo-row {
-  font-size: clamp(1rem, 2.5vw, 1.45rem);
-  font-weight: 700;
-  color: #d8d8d8;
-  letter-spacing: 0.08em;
-}
-
 .practice-totals {
   font-size: 0.85rem;
   color: #555;
@@ -74,22 +56,6 @@
   display: flex;
   justify-content: center;
   align-items: center;
-}
-
-.account-prompt {
-  position: absolute;
-  bottom: 0.5rem;
-  left: 50%;
-  transform: translateX(-50%);
-  color: #555;
-  font-size: 0.75rem;
-  font-weight: 500;
-  letter-spacing: 0.5px;
-  pointer-events: none;
-  z-index: 100;
-  text-align: center;
-  opacity: 0.8;
-  white-space: nowrap;
 }
 
 .left-bottom-bar {
