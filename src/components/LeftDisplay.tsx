@@ -11,8 +11,6 @@ interface LeftDisplayProps {
   totalPracticeCombos: number;
   currentCombo: string;
   isMobile?: boolean;
-  username: string | null;
-  onStreakClick: () => void;
   countdown: number | null;
 }
 
@@ -27,8 +25,6 @@ export function LeftDisplay({
   totalPracticeCombos,
   currentCombo,
   isMobile = false,
-  username,
-  onStreakClick,
   countdown,
 }: LeftDisplayProps) {
   const formatTime = (seconds: number) => {

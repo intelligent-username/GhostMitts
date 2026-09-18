@@ -13,9 +13,7 @@ compatibility_flags = ["nodejs_compat"]
 # 	{ pattern = "api.example.com/*", zone_name = "example.com" }
 # ]
 
-[[r2_buckets]]
-binding = "R2_BUCKET"
-bucket_name = "ghostmitts-combo-history"
+
 
 [assets]
 directory = "../dist"

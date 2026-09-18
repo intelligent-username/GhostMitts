@@ -155,7 +155,7 @@ export function GenerationSettingsModal({ currentMovesCount, value, onChange, di
     const mean = values.reduce((sum, v, i) => sum + (v ?? 0) * (probs[i] ?? 0), 0);
     const variance = values.reduce((sum, v, i) => sum + Math.pow((v ?? 0) - mean, 2) * (probs[i] ?? 0), 0);
 
-    return { values, probability: 0, mean, variance, probs };
+    return { values, mean, variance, probs };
   }, [safeValue.min, safeValue.max, safeValue.lengthVariance]);
 
   const keyChart = useMemo(() => {

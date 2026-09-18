@@ -20,7 +20,6 @@ interface ControlsColumnProps {
   onLogin: (username: string, password: string) => Promise<void>;
   onRegister: (username: string, password: string) => Promise<void>;
   onLogout: () => Promise<void>;
-  isMobile?: boolean;
 }
 
 export function ControlsColumn({
@@ -43,7 +42,6 @@ export function ControlsColumn({
   onLogin,
   onRegister,
   onLogout,
-  isMobile = false,
 }: ControlsColumnProps) {
   return (
     <div className="controls-col">

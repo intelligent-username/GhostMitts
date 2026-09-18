@@ -8,13 +8,6 @@ export interface Env {
   TURSO_URL?: string;
   TURSO_TOKEN?: string;
 
-  // Legacy Cloudflare storage (optional; not used for account/session/preset storage anymore)
-  D1_BINDING?: unknown;
-  R2_BUCKET?: {
-    put: (key: string, value: string) => Promise<unknown>;
-    get: (key: string) => Promise<{ text: () => Promise<string> } | null>;
-  };
-
   SESSION_SECRET: string;
   // Comma-separated list of allowed browser origins
   // Requests without an Origin header (e.g. curl) will be rejected when this is enforced.
@@ -484,38 +477,7 @@ export default {
       return json({ success: true }, 200, corsHeaders(allowedOrigin, request));
     }
 
-    if (url.pathname === "/history/save" && method === "POST") {
-      const auth = await authenticate(request, env);
-      if (!auth.ok) return json({ error: "unauthorized" }, 401, corsHeaders(allowedOrigin, request));
 
-      const body = await request.json() as { month?: string; data?: unknown };
-      const month = (body.month || "").trim();
-      if (!month) return json({ error: "month required" }, 400, corsHeaders(allowedOrigin, request));
-
-      if (!env.R2_BUCKET) return json({ error: "history storage not configured" }, 501, corsHeaders(allowedOrigin, request));
-      await env.R2_BUCKET.put(`${auth.username}/${month}.json`, JSON.stringify(body.data ?? {}));
-      return json({ success: true }, 200, corsHeaders(allowedOrigin, request));
-    }
-
-    if (url.pathname.startsWith("/history/") && method === "GET") {
-      const auth = await authenticate(request, env);
-      if (!auth.ok) return json({ error: "unauthorized" }, 401, corsHeaders(allowedOrigin, request));
-
-      const month = url.pathname.split("/")[2] || "";
-      if (!month) return json({ error: "month required" }, 400, corsHeaders(allowedOrigin, request));
-
-      if (!env.R2_BUCKET) return json({ error: "history storage not configured" }, 501, corsHeaders(allowedOrigin, request));
-      const file = await env.R2_BUCKET.get(`${auth.username}/${month}.json`);
-      if (!file) return json({ error: "not found" }, 404, corsHeaders(allowedOrigin, request));
-      const text = await file.text();
-      return new Response(text, {
-        status: 200,
-        headers: {
-          "Content-Type": "application/json",
-          ...corsHeaders(allowedOrigin, request),
-        },
-      });
-    }
 
       return json({ error: "not found" }, 404, corsHeaders(allowedOrigin, request));
     } catch {

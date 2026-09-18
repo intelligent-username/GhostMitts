@@ -11,11 +11,10 @@ import { generateCombo } from "./scripts/combogenerator";
 import { LeftDisplay } from "./components/LeftDisplay";
 import { ControlsColumn } from "./components/ControlsColumn";
 import { PresetsColumn } from "./components/PresetsColumn";
-import { AuthPanel } from "./components/AuthPanel";
 import { StreakGridModal } from "./components/StreakGridModal";
 import type { Move, PresetKey, GenerationSettings, DisplayMode } from "./types";
 import { DEFAULT_PRESETS, MAX_SLOTS, movesForSlot, formatMinutes } from "./utils/constants";
-import { loadTotalSeconds, loadTotalCombos, saveTotalSeconds, saveTotalCombos, saveGenSettings, todayStr } from "./utils/storage";
+import { loadTotalSeconds, loadTotalCombos, saveTotalSeconds, saveTotalCombos, todayStr } from "./utils/storage";
 import { useAudioSequencer } from "./hooks/useAudioSequencer";
 import { getBootstrap, getMe, insertWorkout, loginAccount, logoutAccount, registerAccount, upsertDailySession, upsertPreset } from "./utils/api";
 import bellUrl from "./assets/bell.ogg";
@@ -401,7 +400,6 @@ export function App() {
         if (mode === "time") {
           setIsTimerRunning(true);
         } else {
-          sessionStartMs.current = Date.now();
           setIsCombosActive(true);
         }
       }, 600);
@@ -413,8 +411,6 @@ export function App() {
   const timeLeftRef          = useRef<number>(0);
   const combosCompletedRef   = useRef<number>(0);
   const totalCombosRef       = useRef<number>(0);
-  const currentTimerDuration = useRef<number>(0);
-  const sessionStartMs       = useRef<number>(0); // wall-clock start for combos-mode timing
   const timerRef             = useRef<number | null>(null);
   const currentComboKeysRef  = useRef<number[] | null>(null);
   const comboTimeRemainingRef = useRef<number>(0);
@@ -662,11 +658,6 @@ export function App() {
   const updatePreset = (moves: Move[]) =>
     setCustomMoves(prev => ({ ...prev, [selectedPreset]: moves }));
 
-  // Persist generation settings whenever they change
-  useEffect(() => {
-    saveGenSettings(JSON.stringify(generationSettings));
-  }, [generationSettings]);
-
   // Auto-save presets to cloud when moves or generation settings change (debounced)
   const presetSaveTimersRef = useRef<Map<PresetKey, number>>(new Map());
 
@@ -786,7 +777,6 @@ export function App() {
 
     const seconds = totalPracticeSecondsRef.current;
     const combos = totalPracticeCombosRef.current;
-    const preset = selectedPresetRef.current;
     const gen = generationSettingsRef.current;
 
     const totalsNonDefault = seconds > 0 || combos > 0;
@@ -897,7 +887,6 @@ export function App() {
           setTotalCombos(0);        // no combo cap in time mode unless user sets it
           totalCombosRef.current = 0;
           setTimeLeft(total);
-          currentTimerDuration.current = total;
           
           // Trigger preparation countdown
           setCountdown(3);
@@ -924,7 +913,6 @@ export function App() {
           setCountdown(3);
         }
       } else if (!isCombosActive) {
-        sessionStartMs.current = Date.now(); // RESUME
         startWorkoutSegment();
         setIsCombosActive(true);
       }
@@ -1008,8 +996,6 @@ export function App() {
             totalPracticeCombos={totalPracticeCombos}
             currentCombo={currentCombo}
             isMobile={true}
-            username={username}
-            onStreakClick={() => { handlePause(); setShowStreakModal(true); }}
             countdown={countdown}
           />
         )}
@@ -1035,7 +1021,6 @@ export function App() {
           onLogin={handleLogin}
           onRegister={handleRegister}
           onLogout={handleLogout}
-          isMobile={true}
         />
 
         {/* Bottom Practice Totals */}
@@ -1124,8 +1109,6 @@ export function App() {
         totalPracticeCombos={totalPracticeCombos}
         currentCombo={currentCombo}
         isMobile={false}
-        username={username}
-        onStreakClick={() => { handlePause(); setShowStreakModal(true); }}
         countdown={countdown}
       />
 
@@ -1153,7 +1136,6 @@ export function App() {
           onLogin={handleLogin}
           onRegister={handleRegister}
           onLogout={handleLogout}
-          isMobile={false}
         />
 
         {/*  Presets column  */}

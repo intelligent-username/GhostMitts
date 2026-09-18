@@ -111,8 +111,6 @@ export function StreakGridModal({ isOpen, onClose, activeDates, streak }: Streak
       isFirst: boolean;
       isToday: boolean;
       dayOfWeek: number;
-      isPreAccount?: boolean;
-      isFuture?: boolean;
     } | null> = [];
 
     for (let i = 111; i >= 0; i--) {
@@ -141,7 +139,6 @@ export function StreakGridModal({ isOpen, onClose, activeDates, streak }: Streak
               isFirst: false,
               isToday: false,
               dayOfWeek: d.getDay(),
-              isPreAccount: true,
             });
           } else {
             // Normal active/inactive range
@@ -194,8 +191,6 @@ export function StreakGridModal({ isOpen, onClose, activeDates, streak }: Streak
       isFirst: boolean;
       isToday: boolean;
       dayOfWeek: number;
-      isPreAccount?: boolean;
-      isFuture?: boolean;
     } | null> = [
       ...Array(firstDayOfWeek).fill(null),
       ...days,
@@ -209,8 +204,6 @@ export function StreakGridModal({ isOpen, onClose, activeDates, streak }: Streak
       isFirst: boolean;
       isToday: boolean;
       dayOfWeek: number;
-      isPreAccount?: boolean;
-      isFuture?: boolean;
     } | null>> = [];
 
     for (let col = 0; col < padded.length; col += 7) {
