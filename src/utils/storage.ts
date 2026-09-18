@@ -1,35 +1,4 @@
-const LS_SECONDS = "gm_totalPracticeSeconds";
-const LS_COMBOS  = "gm_totalPracticeCombos";
-const LS_GEN_SETTINGS = "gm_genSettings";
 
-export function todayStr() {
-  const d = new Date();
-  return d.toISOString().split("T")[0];
-}
-
-export function loadTotalSeconds(): number {
-  const rec = loadRecord(LS_SECONDS);
-  return rec && rec.date === todayStr() ? rec.value : 0;
-}
-
-export function loadTotalCombos(): number {
-  const rec = loadRecord(LS_COMBOS);
-  return rec && rec.date === todayStr() ? rec.value : 0;
-}
-
-export function saveTotalSeconds(val: number) {
-  saveRecord(LS_SECONDS, val);
-}
-
-export function saveTotalCombos(val: number) {
-  saveRecord(LS_COMBOS, val);
-}
-
-export function saveGenSettings(val: string) {
-  try {
-    localStorage.setItem(LS_GEN_SETTINGS, val);
-  } catch {}
-}
 
 function loadRecord(key: string): { date: string; value: number } | null {
   try {
