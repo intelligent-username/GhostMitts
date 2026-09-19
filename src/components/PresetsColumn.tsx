@@ -115,7 +115,7 @@ export function PresetsColumn({
             value={selectedPreset}
             onChange={(e) => onPresetChange(e.target.value as PresetKey)}
           >
-            {(["Boxing", "Kickboxing", "Muay Thai", "MMA"] as PresetKey[]).map(name => (
+            {(["Boxing", "Kickboxing", "Muay Thai", "MMA", "Wrestling"] as PresetKey[]).map(name => (
               <option key={name} value={name}>{name}</option>
             ))}
           </select>

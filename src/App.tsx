@@ -80,6 +80,7 @@ export function App() {
     Kickboxing: [...DEFAULT_PRESETS.Kickboxing],
     "Muay Thai": [...DEFAULT_PRESETS["Muay Thai"]],
     MMA: [...DEFAULT_PRESETS.MMA],
+    Wrestling: [...DEFAULT_PRESETS.Wrestling],
   });
 
   const [generationSettingsMap, setGenerationSettingsMap] = useState<Record<PresetKey, GenerationSettings>>({
@@ -87,6 +88,7 @@ export function App() {
     Kickboxing: { ...DEFAULT_GENERATION_SETTINGS },
     "Muay Thai": { ...DEFAULT_GENERATION_SETTINGS },
     MMA: { ...DEFAULT_GENERATION_SETTINGS },
+    Wrestling: { ...DEFAULT_GENERATION_SETTINGS },
   });
 
   const generationSettings = generationSettingsMap[selectedPreset];
@@ -176,7 +178,7 @@ export function App() {
 
     const presetMap = new Map<PresetKey, { moves?: Move[]; generationSettings?: GenerationSettings }>();
     for (const p of boot.presets) {
-      if (p.preset_name === "Boxing" || p.preset_name === "Kickboxing" || p.preset_name === "Muay Thai" || p.preset_name === "MMA") {
+      if (p.preset_name === "Boxing" || p.preset_name === "Kickboxing" || p.preset_name === "Muay Thai" || p.preset_name === "MMA" || p.preset_name === "Wrestling") {
         const data = p.preset_data as any;
         presetMap.set(p.preset_name, {
           moves: Array.isArray(data?.moves) ? data.moves : undefined,
@@ -576,10 +578,11 @@ export function App() {
       const keys = comboQueueRef.current.shift();
       if (!keys) return;
 
-      // Calculate takedowns in this combo to dynamically extend display timer
+      // Calculate takedowns/shoots in this combo to dynamically extend display timer
       const numTakedowns = keys.filter(k => {
         const move = currentMoves.find(m => m.key === k);
-        return move && move.name.toUpperCase().includes("TAKEDOWN");
+        const name = move?.name.toUpperCase() || "";
+        return name.includes("TAKEDOWN") || name.includes("SHOOT");
       }).length;
 
       // Calculate sprawls in this combo to add another 1 second per sprawl
@@ -750,12 +753,14 @@ export function App() {
         Kickboxing: [...DEFAULT_PRESETS["Kickboxing"]],
         "Muay Thai": [...DEFAULT_PRESETS["Muay Thai"]],
         MMA: [...DEFAULT_PRESETS["MMA"]],
+        Wrestling: [...DEFAULT_PRESETS["Wrestling"]],
       });
       setGenerationSettingsMap({
         Boxing: { ...DEFAULT_GENERATION_SETTINGS },
         Kickboxing: { ...DEFAULT_GENERATION_SETTINGS },
         "Muay Thai": { ...DEFAULT_GENERATION_SETTINGS },
         MMA: { ...DEFAULT_GENERATION_SETTINGS },
+        Wrestling: { ...DEFAULT_GENERATION_SETTINGS },
       });
       setTotalPracticeSeconds(0);
       setTotalPracticeCombos(0);

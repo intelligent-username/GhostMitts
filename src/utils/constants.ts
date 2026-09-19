@@ -6,9 +6,10 @@ export const FRONT_MOVES = [
   "OVERHAND LEFT",
   "LEAD KNEE",
   "FRONT KICK", "LEAD KICK", "LEAD TEEP", "TEEP", "CHECK KICK",
-  "BLOCK", "PARRY LEFT", "LEFT PARRY", "SHOOT A TAKEDOWN", "SLIP LEFT",
+  "BLOCK", "PARRY LEFT", "LEFT PARRY", "SHOOT A TAKEDOWN", "SHOOT", "SLIP LEFT",
   "SWITCH KICK",
   "LEFT ELBOW",
+  "DOWNBLOCK", "FRONT ROLL", "BACKWARD ROLL", "CIRCLE OFF", "LEVEL CHANGE",
 ];
 
 export const REAR_MOVES = [
@@ -20,6 +21,7 @@ export const REAR_MOVES = [
   "PARRY RIGHT", "RIGHT PARRY", "SPRAWL", "SLIP RIGHT",
   "SPINNING ELBOW",
   "RIGHT ELBOW",
+  "SHOOT", "DOWNBLOCK", "FRONT ROLL", "BACKWARD ROLL", "CIRCLE OFF", "LEVEL CHANGE",
 ];
 
 export const NUMBER_AUDIO_MAP: Record<number, string> = {
@@ -59,13 +61,19 @@ export const MOVE_AUDIO_MAP: Record<string, string> = {
   "SLIP LEFT": "n42_SLIP_LEFT.ogg",
   "SLIP RIGHT": "n43_SLIP_RIGHT.ogg",
   "SHOOT A TAKEDOWN": "n44_SHOOT_A_TAKEDOWN.ogg",
+  "SHOOT": "n52_SHOOT.ogg",
   "SPRAWL": "n45_SPRAWL.ogg",
   "LEFT PARRY": "n46_LEFT_PARRY.ogg",
   "RIGHT PARRY": "n47_RIGHT_PARRY.ogg",
   "SPINNING ELBOW": "n48_SPINNING_ELBOW.ogg",
   "SWITCH KICK": "n49_SWITCH_KICK.ogg",
   "LEFT ELBOW": "n50_LEFT_ELBOW.ogg",
-  "RIGHT ELBOW": "n51_RIGHT_ELBOW.ogg"
+  "RIGHT ELBOW": "n51_RIGHT_ELBOW.ogg",
+  "DOWNBLOCK": "n53_DOWNBLOCK.ogg",
+  "FRONT ROLL": "n54_FRONT_ROLL.ogg",
+  "BACKWARD ROLL": "n55_BACKWARD_ROLL.ogg",
+  "CIRCLE OFF": "n56_CIRCLE_OFF.ogg",
+  "LEVEL CHANGE": "n57_LEVEL_CHANGE.ogg"
 };
 
 export const BASE_PUNCHES: Move[] = [
@@ -128,6 +136,15 @@ export const DEFAULT_PRESETS: Record<PresetKey, Move[]> = {
     { key: 16, name: "SPRAWL",           locked: false },
     { key: 17, name: "LEFT PARRY",       locked: false },
     { key: 18, name: "RIGHT PARRY",      locked: false },
+  ],
+  Wrestling: [
+    { key: 1, name: "SHOOT",         locked: false },
+    { key: 2, name: "SPRAWL",        locked: false },
+    { key: 3, name: "DOWNBLOCK",     locked: false },
+    { key: 4, name: "FRONT ROLL",    locked: false },
+    { key: 5, name: "BACKWARD ROLL", locked: false },
+    { key: 6, name: "CIRCLE OFF",    locked: false },
+    { key: 7, name: "LEVEL CHANGE",  locked: false },
   ],
 };
 

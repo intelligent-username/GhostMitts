@@ -133,7 +133,7 @@ curl https://YOUR_WORKER_SUBDOMAIN.workers.dev/health
 
 The frontend talks to the API using `BUN_PUBLIC_API_BASE` **at build time**.
 
-- In Vercel Project → Settings → Environment Variables, set:
+- In the Vercel Project, go to Settings -> Environment Variables, set:
 
   - `BUN_PUBLIC_API_BASE=https://YOUR_WORKER_SUBDOMAIN.workers.dev`
   - Apply to Production (and Preview if you use preview deploys)
