@@ -1,8 +1,0 @@
-# 
-asyncio
-
-# Voice generation
-edge_tts
-
-# Just for audio
-pydub

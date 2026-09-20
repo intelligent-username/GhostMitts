@@ -131,11 +131,12 @@ curl https://YOUR_WORKER_SUBDOMAIN.workers.dev/health
 
 #### If the Vercel frontend says "Accounts Offline"
 
-The frontend talks to the API using `BUN_PUBLIC_API_BASE` **at build time**.
+The frontend talks to the API using `VITE_API_BASE` (or `BUN_PUBLIC_API_BASE`) **at build time**.
 
 - In the Vercel Project, go to Settings -> Environment Variables, set:
 
-  - `BUN_PUBLIC_API_BASE=https://YOUR_WORKER_SUBDOMAIN.workers.dev`
+  - `VITE_API_BASE=https://YOUR_WORKER_SUBDOMAIN.workers.dev`
+  - (Optional) `BUN_PUBLIC_API_BASE=https://YOUR_WORKER_SUBDOMAIN.workers.dev`
   - Apply to Production (and Preview if you use preview deploys)
 - Redeploy the frontend.
 

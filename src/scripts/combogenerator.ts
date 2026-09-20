@@ -21,7 +21,7 @@
 const KICK_NAMES = new Set([
   "LEAD KNEE", "REAR KNEE",
   "LEAD KICK", "REAR KICK", "BODY KICK", "ROUNDHOUSE KICK",
-  "TEEP", "LOW KICK", "HEAD KICK",
+  "TEEP", "CALF KICK", "HEAD KICK",
   "FRONT KICK", "LEAD TEEP", "REAR TEEP", "CHECK KICK",
 ]);
 
@@ -30,7 +30,7 @@ const REAR_KICK_NAMES = new Set([
   "REAR TEEP",
   "BODY KICK",
   "ROUNDHOUSE KICK",
-  "LOW KICK",
+  "CALF KICK",
   "HEAD KICK",
 ]);
 

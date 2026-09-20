@@ -578,20 +578,36 @@ export function App() {
       const keys = comboQueueRef.current.shift();
       if (!keys) return;
 
-      // Calculate takedowns/shoots in this combo to dynamically extend display timer
-      const numTakedowns = keys.filter(k => {
+      // Calculate dynamic combo delay extensions based on movement complexity
+      let extraComboDelay = 0;
+      for (const k of keys) {
         const move = currentMoves.find(m => m.key === k);
         const name = move?.name.toUpperCase() || "";
-        return name.includes("TAKEDOWN") || name.includes("SHOOT");
-      }).length;
+        if (name.includes("SHOOT") || name.includes("TAKEDOWN") || name.includes("ROLL")) {
+          extraComboDelay += 2000;
+        } else if (
+          name.includes("SPINNING") ||
+          name.includes("SWITCH KICK") ||
+          name.includes("WHEEL") ||
+          name.includes("TORNADO")
+        ) {
+          extraComboDelay += 1000;
+        } else if (name.includes("SPRAWL")) {
+          extraComboDelay += 1000;
+        } else if (name.includes("CIRCLE OFF") || name.includes("LEVEL CHANGE")) {
+          extraComboDelay += 700;
+        } else if (name.includes("DOWNBLOCK")) {
+          extraComboDelay += 500;
+        } else if (name.includes("CALF KICK")) {
+          extraComboDelay += 200;
+        } else if (name.includes("KICK") || name.includes("TEEP")) {
+          extraComboDelay += 300;
+        } else if (["KNEE", "ELBOW", "OVERHAND"].some(s => name.includes(s))) {
+          extraComboDelay += 400;
+        }
+      }
 
-      // Calculate sprawls in this combo to add another 1 second per sprawl
-      const numSprawls = keys.filter(k => {
-        const move = currentMoves.find(m => m.key === k);
-        return move && move.name.toUpperCase().includes("SPRAWL");
-      }).length;
-
-      const nextDelay = speed + (numTakedowns * 1500) + (numSprawls * 1000);
+      const nextDelay = speed + extraComboDelay;
 
       currentComboKeysRef.current = keys;
       comboTimeRemainingRef.current = nextDelay;
@@ -800,7 +816,7 @@ export function App() {
     }
 
     const rearKickNames = new Set([
-      "REAR KICK", "REAR TEEP", "BODY KICK", "ROUNDHOUSE KICK", "LOW KICK", "HEAD KICK",
+      "REAR KICK", "REAR TEEP", "BODY KICK", "ROUNDHOUSE KICK", "CALF KICK", "HEAD KICK",
     ]);
 
     const persistPreset = (presetKey: PresetKey, moves: Move[]) => {

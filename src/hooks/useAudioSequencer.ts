@@ -142,22 +142,44 @@ export function useAudioSequencer({
             // Double-up compression: identical consecutive moves play rapid-fire
             if (curName === nextName && curName !== "") {
               delay = 0;
+            } else if (
+              curName.includes("SHOOT") ||
+              curName.includes("TAKEDOWN") ||
+              curName.includes("ROLL")
+            ) {
+              delay = 2000;
+            } else if (
+              curName.includes("SPINNING") ||
+              curName.includes("SWITCH KICK") ||
+              curName.includes("WHEEL") ||
+              curName.includes("TORNADO")
+            ) {
+              // Spinning and fancy kicks/strikes
+              delay = 1000;
+            } else if (curName.includes("CALF KICK")) {
+              // Calf kick
+              delay = 200;
+            } else if (
+              curName.includes("KICK") ||
+              curName.includes("TEEP")
+            ) {
+              // All other kicks
+              delay = 300;
+            } else if (curName.includes("DOWNBLOCK")) {
+              delay = 500;
+            } else if (
+              curName.includes("CIRCLE OFF") ||
+              curName.includes("LEVEL CHANGE") ||
+              curName.includes("SPRAWL")
+            ) {
+              delay = 700;
             } else {
-              delay = 100; // standard space between voice cues
-            }
-
-            // High commitment extra padding (kicks, knees, elbows, defenses, heavy punches)
-            const highCommitmentSuffixes = [
-              "KICK", "TEEP", "KNEE", "ELBOW", "TAKEDOWN", "SPRAWL", "OVERHAND", "SPINNING"
-            ];
-            const isHighCommitment = highCommitmentSuffixes.some(suffix => curName.includes(suffix));
-            if (isHighCommitment) {
-              if (curName.includes("TAKEDOWN")) {
-                delay += 1000;
-              } else if (curName.includes("SPRAWL")) {
-                delay += 800;
+              // Other heavy strikes (knees, elbows, overhands)
+              const heavyStrikes = ["KNEE", "ELBOW", "OVERHAND"];
+              if (heavyStrikes.some(suffix => curName.includes(suffix))) {
+                delay = 400;
               } else {
-                delay += 400; // standard kick/knee/elbow padding
+                delay = 100; // standard space between rapid boxing cues
               }
             }
           }

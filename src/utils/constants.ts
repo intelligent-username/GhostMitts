@@ -9,7 +9,7 @@ export const FRONT_MOVES = [
   "BLOCK", "PARRY LEFT", "LEFT PARRY", "SHOOT A TAKEDOWN", "SHOOT", "SLIP LEFT",
   "SWITCH KICK",
   "LEFT ELBOW",
-  "DOWNBLOCK", "FRONT ROLL", "BACKWARD ROLL", "CIRCLE OFF", "LEVEL CHANGE",
+  "DOWNBLOCK", "FRONT ROLL", "BACKWARD ROLL", "CIRCLE OFF", "LEVEL CHANGE", "CALF KICK",
 ];
 
 export const REAR_MOVES = [
@@ -17,7 +17,7 @@ export const REAR_MOVES = [
   "OVERHAND RIGHT",
   "REAR KNEE",
   "REAR KICK", "BODY KICK", "ROUNDHOUSE KICK",
-  "REAR TEEP", "LOW KICK", "HEAD KICK",
+  "REAR TEEP", "CALF KICK", "HEAD KICK",
   "PARRY RIGHT", "RIGHT PARRY", "SPRAWL", "SLIP RIGHT",
   "SPINNING ELBOW",
   "RIGHT ELBOW",
@@ -52,7 +52,7 @@ export const MOVE_AUDIO_MAP: Record<string, string> = {
   "TEEP": "n35_TEEP.ogg",
   "LEAD TEEP": "n35_TEEP.ogg",
   "REAR TEEP": "n35_TEEP.ogg",
-  "LOW KICK": "n36_LOW_KICK.ogg",
+  "CALF KICK": "n36_CALF_KICK.ogg",
   "HEAD KICK": "n37_HEAD_KICK.ogg",
   "CHECK KICK": "n38_CHECK_KICK.ogg",
   "BLOCK": "n39_BLOCK.ogg",
@@ -99,7 +99,7 @@ export const DEFAULT_PRESETS: Record<PresetKey, Move[]> = {
     { key: 7,  name: "LEAD TEEP",       locked: false },
     { key: 8,  name: "REAR KICK",       locked: false },
     { key: 9,  name: "CHECK KICK",      locked: false },
-    { key: 10, name: "LOW KICK",        locked: false },
+    { key: 10, name: "CALF KICK",       locked: false },
   ],
   "Muay Thai": [
     { key: 1, name: "JAB",            locked: true },
@@ -111,7 +111,7 @@ export const DEFAULT_PRESETS: Record<PresetKey, Move[]> = {
     { key: 7,  name: "LEAD TEEP",       locked: false },
     { key: 8,  name: "REAR KICK",       locked: false },
     { key: 9,  name: "CHECK KICK",      locked: false },
-    { key: 10, name: "LOW KICK",        locked: false },
+    { key: 10, name: "CALF KICK",       locked: false },
     { key: 11, name: "LEAD KNEE",       locked: false },
     { key: 12, name: "REAR KNEE",       locked: false },
     { key: 13, name: "LEFT ELBOW",      locked: false },
@@ -127,7 +127,7 @@ export const DEFAULT_PRESETS: Record<PresetKey, Move[]> = {
     { key: 7,  name: "LEAD TEEP",        locked: false },
     { key: 8,  name: "REAR KICK",        locked: false },
     { key: 9,  name: "CHECK KICK",       locked: false },
-    { key: 10, name: "LOW KICK",         locked: false },
+    { key: 10, name: "CALF KICK",        locked: false },
     { key: 11, name: "LEAD KNEE",        locked: false },
     { key: 12, name: "REAR KNEE",        locked: false },
     { key: 13, name: "LEFT ELBOW",       locked: false },
