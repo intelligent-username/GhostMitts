@@ -1,6 +1,7 @@
 {
-  "name": "bun-react-template",
+  "name": "ghostmitts",
   "version": "0.1.0",
+  "description": "Audio-guided combat sports combinations trainer for Boxing, Kickboxing, Muay Thai, MMA, and Wrestling.",
   "private": true,
   "type": "module",
   "scripts": {
@@ -8,8 +9,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "start": "NODE_ENV=production bun src/index.ts",
-    "deploy": "wrangler deploy",
-    "preview:worker": "wrangler dev",
+    "deploy": "bunx wrangler deploy --config worker/wrangler.toml",
+    "preview:worker": "bunx wrangler dev --config worker/wrangler.toml",
     "api:dev": "bunx wrangler dev --config worker/wrangler.toml",
     "api:deploy": "bunx wrangler deploy --config worker/wrangler.toml",
     "api:tail": "bunx wrangler tail --config worker/wrangler.toml"

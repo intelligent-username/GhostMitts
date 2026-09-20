@@ -2,7 +2,7 @@
 
 <img src="src/assets/logo.svg" alt="Logo" width="200" height="200">
 
-Imagine coach to tell you what combinations to throw.
+Imagine coach telling you what combinations to throw, anywhere, anytime.
 
 ## Running Locally
 
