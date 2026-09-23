@@ -116,8 +116,19 @@ export function App() {
   const speedRef = useRef<number>(3000);
 
   // Display options
-  const [displayMode, setDisplayMode] = useState<DisplayMode>("numbers");
-  const displayModeRef = useRef<DisplayMode>("numbers");
+  const [displayModeMap, setDisplayModeMap] = useState<Record<PresetKey, DisplayMode>>({
+    Boxing: "numbers",
+    Kickboxing: "numbers",
+    "Muay Thai": "numbers",
+    MMA: "numbers",
+    Wrestling: "fullname",
+  });
+  const displayMode = displayModeMap[selectedPreset];
+  const setDisplayMode = useCallback((mode: DisplayMode) => {
+    setDisplayModeMap(prev => ({ ...prev, [selectedPreset]: mode }));
+  }, [selectedPreset]);
+
+  const displayModeRef = useRef<DisplayMode>(displayMode);
   useEffect(() => { displayModeRef.current = displayMode; }, [displayMode]);
 
   const [customDisplayKeys, setCustomDisplayKeys] = useState<Set<number>>(new Set());
@@ -727,7 +738,10 @@ export function App() {
   const handleChangeName = (key: number, newName: string) =>
     updatePreset(currentMoves.map(m => m.key === key ? { ...m, name: newName } : m));
 
-  const handlePresetChange = (p: PresetKey) => setSelectedPreset(p);
+  const handlePresetChange = (p: PresetKey) => {
+    setSelectedPreset(p);
+    displayModeRef.current = displayModeMap[p];
+  };
 
   const handleRegister = useCallback(async (nextUsername: string, password: string) => {
     setAuthBusy(true);

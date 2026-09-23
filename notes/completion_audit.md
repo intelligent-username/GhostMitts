@@ -57,10 +57,9 @@ This audit reviews GhostMitts across its React frontend, Cloudflare Worker backe
 - **Problem**: `setCombosCompleted` increments as soon as the combo is emitted and starts playing audio. If a user pauses or resets during the first combo, the counter already registers `1` completed combo.
 - **Fix**: Increment upon completion of the interval or sync completion when transitioning to the next combo.
 
-### 3.6 Wrestling Preset Defaults to Numbers Voice Callout
-- **Location**: [App.tsx](file:///c:/Users/varak/Documents/CODE/Projects/Easy%20Projects/GhostMitts/src/App.tsx#L521-L527), [useAudioSequencer.ts](file:///c:/Users/varak/Documents/CODE/Projects/Easy%20Projects/GhostMitts/src/hooks/useAudioSequencer.ts#L83-L97)
-- **Problem**: GhostMitts defaults `displayMode` to `"numbers"`. When selecting the **Wrestling** preset (SHOOT, SPRAWL, DOWNBLOCK, etc.), voice cues call out "ONE", "TWO", "THREE" instead of the wrestling action names unless the user discovers the display mode toggle and switches to `"fullname"`.
-- **Fix**: Automatically switch `displayMode` to `"fullname"` when switching to Wrestling, or add preset-level default display mode metadata.
+### 3.6 [RESOLVED] Wrestling Preset Defaults to Numbers Voice Callout
+- **Location**: [App.tsx](file:///c:/Users/varak/Documents/CODE/Projects/Easy%20Projects/GhostMitts/src/App.tsx#L118-L130)
+- **Status**: Fixed by introducing a per-preset `displayModeMap` where Wrestling defaults to `"fullname"` and striking presets default to `"numbers"`.
 
 ### 3.7 Missing React Error Boundary
 - **Location**: [frontend.tsx](file:///c:/Users/varak/Documents/CODE/Projects/Easy%20Projects/GhostMitts/src/scripts/frontend.tsx)
