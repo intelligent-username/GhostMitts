@@ -540,9 +540,15 @@ export function App() {
 
   // Fill up the queue so it is always 10 combos deep ahead of time
   const replenishQueue = useCallback(() => {
-    while (comboQueueRef.current.length < 10) {
+    let attempts = 0;
+    while (comboQueueRef.current.length < 10 && attempts < 20) {
+      attempts++;
       const keys = getCombo();
-      if (keys.length > 0) comboQueueRef.current.push(keys);
+      if (keys.length > 0) {
+        comboQueueRef.current.push(keys);
+      } else {
+        break;
+      }
     }
   }, [getCombo]);
 
