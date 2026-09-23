@@ -23,7 +23,7 @@ export function MoveWeightsSection({
     if (isNaN(val) || val <= 0) {
       delete nextWeights[key];
     } else {
-      nextWeights[key] = Math.max(0.001, Math.min(100.0, val));
+      nextWeights[key] = Math.round(Math.max(0.01, Math.min(100.0, val)) * 100) / 100;
     }
     updateSettings({ weights: Object.keys(nextWeights).length > 0 ? nextWeights : undefined });
   };
@@ -53,7 +53,8 @@ export function MoveWeightsSection({
           </thead>
           <tbody>
             {currentMoves.map(move => {
-              const weightVal = safeValue.weights?.[move.key] ?? 1.0;
+              const rawWeight = safeValue.weights?.[move.key] ?? 1.0;
+              const weightVal = Math.round(rawWeight * 100) / 100;
               return (
                 <tr key={move.key}>
                   <td className="move-key-cell">{move.key}</td>
@@ -61,7 +62,7 @@ export function MoveWeightsSection({
                   <td className="move-weight-cell">
                     <input
                       type="number"
-                      step="0.1"
+                      step="0.01"
                       min="0.01"
                       max="10"
                       value={weightVal}

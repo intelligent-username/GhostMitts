@@ -67,7 +67,7 @@ export function KeyProbabilityChart({
 
       const newWeight = currentWeight * Math.pow(1.01, delta);
       const nextWeights = { ...(safeValue.weights || {}) };
-      nextWeights[draggingKey] = Math.max(0.001, Math.min(100.0, newWeight));
+      nextWeights[draggingKey] = Math.round(Math.max(0.01, Math.min(100.0, newWeight)) * 100) / 100;
       updateSettings({ weights: nextWeights });
     }
   };
