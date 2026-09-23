@@ -74,11 +74,31 @@
 }
 
 .generation-modal-body {
-  padding: 1rem;
+  padding: 1.25rem;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  scrollbar-width: thin;
+  scrollbar-color: #2f2f38 transparent;
+}
+
+.generation-modal-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.generation-modal-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.generation-modal-body::-webkit-scrollbar-thumb {
+  background: #282830;
+  border-radius: 999px;
+  transition: background 0.2s ease;
+}
+
+.generation-modal-body::-webkit-scrollbar-thumb:hover {
+  background: #4CAF50;
 }
 
 /* Customize Display & Voice Section */
@@ -413,6 +433,26 @@
   border: 1px solid #232323;
   border-radius: 8px;
   background: #09090b;
+  scrollbar-width: thin;
+  scrollbar-color: #2f2f38 transparent;
+}
+
+.customize-moves-table-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.customize-moves-table-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.customize-moves-table-container::-webkit-scrollbar-thumb {
+  background: #282830;
+  border-radius: 999px;
+  transition: background 0.2s ease;
+}
+
+.customize-moves-table-container::-webkit-scrollbar-thumb:hover {
+  background: #4CAF50;
 }
 
 .customize-moves-table {

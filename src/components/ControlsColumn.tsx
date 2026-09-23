@@ -92,11 +92,11 @@ export function ControlsColumn({
               </div>
             </div>
           ) : (
-            <div className="input-group mode-panel-animate">
+            <div className="input-group mode-panel-animate combos-input-group">
               <span className="input-label">How Many?</span>
               <input
                 type="number"
-                className="styled-input"
+                className="styled-input combos-styled-input"
                 value={comboInput}
                 onChange={e => setComboInput(e.target.value)}
                 min="1"

@@ -272,6 +272,10 @@ export function useWorkoutRunner({
     const current = timeLeftRef.current;
     setTimeLeft(Math.max(0, current));
 
+    if (current === 10) {
+      playDrums();
+    }
+
     if (current <= 0) {
       stopAllRuns();
       playBell();
@@ -280,7 +284,7 @@ export function useWorkoutRunner({
     }
 
     timerTimeoutRef.current = window.setTimeout(tickTimer, 1000);
-  }, [stopAllRuns, playBell]);
+  }, [stopAllRuns, playBell, playDrums]);
 
   const startTimerWorkout = useCallback(() => {
     if (isTimerRunning || isCountingDownRef.current) return;
@@ -304,7 +308,6 @@ export function useWorkoutRunner({
     setCombosCompleted(0);
     setCountdown(3);
     isCountingDownRef.current = true;
-    playDrums();
     playNumberSound(3);
 
     let count = 3;
@@ -328,7 +331,7 @@ export function useWorkoutRunner({
       }
     };
     countdownTimerRef.current = window.setTimeout(runCountdown, 1000);
-  }, [isTimerRunning, resumeCurrentCombo, tickTimer, stopAllRuns, timeInputMin, timeInputSec, playDrums, playNumberSound, playBell]);
+  }, [isTimerRunning, resumeCurrentCombo, tickTimer, stopAllRuns, timeInputMin, timeInputSec, playNumberSound, playBell]);
 
   const startCombosWorkout = useCallback(() => {
     if (isCombosActive || isCountingDownRef.current) return;
@@ -347,7 +350,6 @@ export function useWorkoutRunner({
     setCombosCompleted(0);
     setCountdown(3);
     isCountingDownRef.current = true;
-    playDrums();
     playNumberSound(3);
 
     let count = 3;
@@ -370,7 +372,7 @@ export function useWorkoutRunner({
       }
     };
     countdownTimerRef.current = window.setTimeout(runCountdown, 1000);
-  }, [isCombosActive, combosCompleted, resumeCurrentCombo, stopAllRuns, comboInput, playDrums, playNumberSound, playBell]);
+  }, [isCombosActive, combosCompleted, resumeCurrentCombo, stopAllRuns, comboInput, playNumberSound, playBell]);
 
   return {
     mode,

@@ -37,6 +37,15 @@ export function LeftDisplay({
 
   const totalMins = formatMinutes(totalPracticeSeconds);
 
+  const getComboSizeClass = (comboStr: string) => {
+    if (comboStr === "WORKOUT COMPLETE!") return "combo-size-large";
+    const moveCount = comboStr.split(" · ").length;
+    const charLen = comboStr.length;
+    if (charLen > 80 || moveCount >= 8) return "combo-size-compact";
+    if (charLen > 38 || moveCount >= 5) return "combo-size-medium";
+    return "combo-size-large";
+  };
+
   const renderContent = () => {
     if (countdown !== null) {
       return (
@@ -49,41 +58,46 @@ export function LeftDisplay({
       );
     }
 
+    const sizeClass = getComboSizeClass(currentCombo);
+
     if (mode === "time") {
-      if (!isTimerRunning && timeLeft === 0 && !currentCombo)
+      if (!isTimerRunning && timeLeft === 0 && !currentCombo) {
         return isMobile ? null : <div className="idle-text">Ready</div>;
-      
-      if (timeLeft === 0 && currentCombo) {
-        return <div className="idle-text">{currentCombo}</div>;
       }
 
       return (
         <div className="display-wrapper">
           <div className="time-display">{formatTime(timeLeft)}</div>
           {currentCombo && (
-            <div key={currentCombo} className="current-combo" aria-live="polite">{currentCombo}</div>
+            <div key={currentCombo} className={`current-combo ${sizeClass}`} aria-live="polite">
+              {currentCombo}
+            </div>
           )}
         </div>
       );
     }
-    // combos mode
-    if (!isCombosActive && totalCombos === 0 && !currentCombo)
-      return isMobile ? null : <div className="idle-text">Ready</div>;
 
-    if (totalCombos === 0 && currentCombo) {
-      return <div className="idle-text">{currentCombo}</div>;
+    // Combos mode
+    if (!isCombosActive && totalCombos === 0 && !currentCombo) {
+      return isMobile ? null : <div className="idle-text">Ready</div>;
     }
+
+    const remainingCombos = Math.max(0, totalCombos - combosCompleted);
 
     return (
       <div className="display-wrapper">
-        <div className="combo-status">
-          <div className="combo-small">{combosCompleted}/{totalCombos} completed</div>
-          <div className="combo-large">
-            {Math.max(0, totalCombos - combosCompleted)} remaining
-          </div>
+        <div className="time-display combo-count-display">
+          {remainingCombos}
         </div>
+        {totalCombos > 0 && (
+          <div className="combo-subtext">
+            {combosCompleted} / {totalCombos} completed
+          </div>
+        )}
         {currentCombo && (
-          <div key={currentCombo} className="current-combo" aria-live="polite">{currentCombo}</div>
+          <div key={currentCombo} className={`current-combo ${sizeClass}`} aria-live="polite">
+            {currentCombo}
+          </div>
         )}
       </div>
     );

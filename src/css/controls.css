@@ -140,6 +140,15 @@
   gap: 1rem;
 }
 
+.combos-input-group {
+  align-items: center;
+}
+
+.combos-styled-input {
+  max-width: 140px;
+  width: 100%;
+}
+
 .button-group {
   width: 100%;
   display: flex;
