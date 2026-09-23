@@ -14,7 +14,7 @@ import { PresetsColumn } from "./components/PresetsColumn";
 import { StreakGridModal } from "./components/StreakGridModal";
 import type { Move, PresetKey, GenerationSettings, DisplayMode } from "./types";
 import { DEFAULT_PRESETS, MAX_SLOTS, movesForSlot, formatMinutes } from "./utils/constants";
-import { loadTotalSeconds, loadTotalCombos, saveTotalSeconds, saveTotalCombos, todayStr } from "./utils/storage";
+import { loadTotalSeconds, loadTotalCombos, saveTotalSeconds, saveTotalCombos, todayStr, toLocalDateStr } from "./utils/storage";
 import { useAudioSequencer } from "./hooks/useAudioSequencer";
 import { getBootstrap, getMe, insertWorkout, loginAccount, logoutAccount, registerAccount, upsertDailySession, upsertPreset } from "./utils/api";
 import bellUrl from "./assets/bell.ogg";
@@ -219,7 +219,7 @@ export function App() {
         if (mounted && me.authenticated && me.username) {
           setUsername(me.username);
           try {
-            const boot = await getBootstrap();
+            const boot = await getBootstrap(todayStr());
             if (!mounted) return;
             applyBootstrap(boot);
             if (mounted) setIsBootstrapped(true);
@@ -301,14 +301,16 @@ export function App() {
           : [...prev, { date: ts, num_combos: combosDelta }];
 
         const dateSet = new Set(updated.map(d => d.date));
-        const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0]!;
+        const yDate = new Date();
+        yDate.setDate(yDate.getDate() - 1);
+        const yesterday = toLocalDateStr(yDate);
         let cursor = dateSet.has(ts) ? ts : dateSet.has(yesterday) ? yesterday : "";
         let newStreak = 0;
         while (cursor && dateSet.has(cursor)) {
           newStreak++;
           const d = new Date(cursor + "T12:00:00");
           d.setDate(d.getDate() - 1);
-          cursor = d.toISOString().split("T")[0]!;
+          cursor = toLocalDateStr(d);
         }
         setStreak(newStreak);
         return updated;
@@ -319,6 +321,7 @@ export function App() {
 
     void insertWorkout(
       {
+        date: ts,
         started_at: startedAt,
         ended_at: endedAt,
         mode: modeAtStart,
@@ -735,7 +738,7 @@ export function App() {
       setApiConnected(true);
 
       try {
-        const boot = await getBootstrap();
+        const boot = await getBootstrap(todayStr());
         applyBootstrap(boot);
       } catch {}
       setIsBootstrapped(true);
@@ -752,7 +755,7 @@ export function App() {
       setApiConnected(true);
 
       try {
-        const boot = await getBootstrap();
+        const boot = await getBootstrap(todayStr());
         applyBootstrap(boot);
       } catch {}
       setIsBootstrapped(true);

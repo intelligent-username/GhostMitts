@@ -30,10 +30,9 @@ This audit reviews GhostMitts across its React frontend, Cloudflare Worker backe
 
 ## 3. Functional Gaps & Logic Inconsistencies
 
-### 3.1 UTC Rollover Inconsistency for Daily Stats & Streaks
-- **Location**: [storage.ts](file:///c:/Users/varak/Documents/CODE/Projects/Easy%20Projects/GhostMitts/src/utils/storage.ts#L4-L7), [App.tsx](file:///c:/Users/varak/Documents/CODE/Projects/Easy%20Projects/GhostMitts/src/App.tsx#L296)
-- **Problem**: `todayStr()` calculates dates using `new Date().toISOString().split("T")[0]`, which returns UTC dates. Users in western timezones (e.g. UTC-4 / EDT) working out in the evening will have their sessions stamped with tomorrow's date, causing premature streak rollovers and local stat resets mid-evening.
-- **Fix**: Format the local date using local calendar components (`getFullYear()`, `getMonth() + 1`, `getDate()`) formatted as `YYYY-MM-DD`.
+### 3.1 [RESOLVED] UTC Rollover Inconsistency for Daily Stats & Streaks
+- **Location**: [storage.ts](file:///c:/Users/varak/Documents/CODE/Projects/Easy%20Projects/GhostMitts/src/utils/storage.ts), [App.tsx](file:///c:/Users/varak/Documents/CODE/Projects/Easy%20Projects/GhostMitts/src/App.tsx), [StreakGridModal.tsx](file:///c:/Users/varak/Documents/CODE/Projects/Easy%20Projects/GhostMitts/src/components/StreakGridModal.tsx), [worker/src/index.ts](file:///c:/Users/varak/Documents/CODE/Projects/Easy%20Projects/GhostMitts/worker/src/index.ts)
+- **Status**: Fixed by formatting local dates via `toLocalDateStr()`, passing client local date to `/bootstrap?date=...` and `/workouts/insert`, and referencing client local date in worker streak calculations.
 
 ### 3.2 Key 1 Assumptions in `combogenerator.ts`
 - **Location**: [combogenerator.ts](file:///c:/Users/varak/Documents/CODE/Projects/Easy%20Projects/GhostMitts/src/scripts/combogenerator.ts#L116-L118), [combogenerator.ts](file:///c:/Users/varak/Documents/CODE/Projects/Easy%20Projects/GhostMitts/src/scripts/combogenerator.ts#L155-L162)

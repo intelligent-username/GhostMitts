@@ -1,9 +1,15 @@
 const LS_SECONDS = "gm_totalPracticeSeconds";
 const LS_COMBOS  = "gm_totalPracticeCombos";
 
-export function todayStr() {
-  const d = new Date();
-  return d.toISOString().split("T")[0];
+export function toLocalDateStr(d: Date = new Date()): string {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+export function todayStr(): string {
+  return toLocalDateStr(new Date());
 }
 
 export function loadTotalSeconds(): number {

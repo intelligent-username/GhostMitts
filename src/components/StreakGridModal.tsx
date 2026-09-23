@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect } from "react";
+import { toLocalDateStr } from "../utils/storage";
 
 interface ActiveDateRecord {
   date: string;
@@ -77,7 +78,7 @@ export function StreakGridModal({ isOpen, onClose, activeDates, streak }: Streak
   // Generate the grid - 16 weeks normally, 6 weeks (with 2-week padding) for brand-new accounts
   const { weeks, monthLabels } = useMemo(() => {
     const today = new Date();
-    const todayStr = today.toISOString().split("T")[0]!;
+    const todayStr = toLocalDateStr(today);
 
     const endDate = new Date();
     if (isNewAccount) {
@@ -96,11 +97,11 @@ export function StreakGridModal({ isOpen, onClose, activeDates, streak }: Streak
       const firstActiveDateObj = new Date(firstActiveDate + "T00:00:00");
       const padStart = new Date(firstActiveDateObj.getTime());
       padStart.setDate(firstActiveDateObj.getDate() - 14); // 2 weeks before first day
-      newAccountWindowStart = padStart.toISOString().split("T")[0]!;
+      newAccountWindowStart = toLocalDateStr(padStart);
 
       const padEnd = new Date(today.getTime());
       padEnd.setDate(today.getDate() + 14); // 2 weeks after current day
-      newAccountWindowEnd = padEnd.toISOString().split("T")[0]!;
+      newAccountWindowEnd = toLocalDateStr(padEnd);
     }
 
     const days: Array<{
@@ -116,7 +117,7 @@ export function StreakGridModal({ isOpen, onClose, activeDates, streak }: Streak
     for (let i = 111; i >= 0; i--) {
       const d = new Date(endDate.getTime());
       d.setDate(endDate.getDate() - i);
-      const dateStr = d.toISOString().split("T")[0]!;
+      const dateStr = toLocalDateStr(d);
 
       if (isNewAccount) {
         // For new accounts, everything outside the 6-week period is empty (null)

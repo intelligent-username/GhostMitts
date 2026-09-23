@@ -119,11 +119,11 @@ function addDaysUtc(dateStr: string, deltaDays: number) {
   return d.toISOString().split("T")[0] || "";
 }
 
-function computeStreakFromDates(descDates: string[]) {
+function computeStreakFromDates(descDates: string[], referenceToday?: string) {
   if (descDates.length === 0) return 0;
 
   const set = new Set(descDates);
-  const today = todayUtcStr();
+  const today = referenceToday || todayUtcStr();
   const yesterday = addDaysUtc(today, -1);
 
   // Standard streak behavior: if no activity today, streak counts up to yesterday.
@@ -315,7 +315,7 @@ export default {
       const auth = await authenticate(request, env);
       if (!auth.ok) return json({ error: "unauthorized" }, 401, corsHeaders(allowedOrigin, request));
 
-      const today = todayUtcStr();
+      const today = url.searchParams.get("date")?.trim() || todayUtcStr();
 
       const [todaySession, presetRows, activeDays] = await Promise.all([
         dbGet<{ date: string; num_combos: number; time_seconds: number }>(
@@ -344,7 +344,7 @@ export default {
       });
 
       const dates = activeDays.map(r => r.date).filter(Boolean);
-      const streak = computeStreakFromDates(dates);
+      const streak = computeStreakFromDates(dates, today);
       const activeDateRecords = activeDays
         .filter(r => r.date)
         .map(r => ({ date: r.date, num_combos: Number(r.num_combos) || 0 }));
@@ -368,6 +368,7 @@ export default {
 
       const body = await request.json() as {
         workout_id?: string;
+        date?: string;
         started_at?: string;
         ended_at?: string;
         mode?: string;
@@ -391,7 +392,7 @@ export default {
         return json({ error: "started_at, ended_at, and mode are required" }, 400, corsHeaders(allowedOrigin, request));
       }
 
-      const date = startedAt.split("T")[0] || todayUtcStr();
+      const date = (body.date || "").trim() || startedAt.split("T")[0] || todayUtcStr();
       const payloadJson = body.workout_data == null ? null : JSON.stringify(body.workout_data);
 
       // 1) Insert detailed workout segment

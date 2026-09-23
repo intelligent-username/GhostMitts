@@ -53,18 +53,20 @@ export async function getMe() {
   return requestJson<{ authenticated: boolean; username?: string }>("/me", { method: "GET" });
 }
 
-export async function getBootstrap() {
+export async function getBootstrap(date?: string) {
+  const query = date ? `?date=${encodeURIComponent(date)}` : "";
   return requestJson<{
     username: string;
     todaySession: null | { date: string; num_combos: number; time_seconds: number };
     presets: Array<{ preset_name: string; preset_data: unknown }>;
     streak: number;
     activeDates?: Array<{ date: string; num_combos: number }>;
-  }>("/bootstrap", { method: "GET" });
+  }>(`/bootstrap${query}`, { method: "GET" });
 }
 
 export async function insertWorkout(payload: {
   workout_id?: string;
+  date?: string;
   started_at: string;
   ended_at: string;
   mode: "time" | "combos";
