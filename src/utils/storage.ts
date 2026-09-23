@@ -46,3 +46,22 @@ function saveRecord(key: string, value: number) {
     localStorage.setItem(key, JSON.stringify({ date: todayStr(), value }));
   } catch {}
 }
+
+const LS_ACTIVE_DATES = "gm_localActiveDates";
+
+export function loadLocalActiveDates(): Array<{ date: string; num_combos: number }> {
+  try {
+    const raw = localStorage.getItem(LS_ACTIVE_DATES);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveLocalActiveDates(records: Array<{ date: string; num_combos: number }>) {
+  try {
+    localStorage.setItem(LS_ACTIVE_DATES, JSON.stringify(records));
+  } catch {}
+}

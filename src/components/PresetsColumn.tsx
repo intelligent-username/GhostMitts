@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { GenerationSettingsModal } from "./GenerationSettingsModal";
 import type { Move, PresetKey, GenerationSettings, DisplayMode } from "../types";
 
@@ -44,6 +45,14 @@ export function PresetsColumn({
   setCustomDisplayKeys,
   onSettingsOpen,
 }: PresetsColumnProps) {
+  const [speedText, setSpeedText] = useState<string>(() =>
+    speed < 1000 ? String(Math.round(speed)) : (speed / 1000).toFixed(1)
+  );
+
+  useEffect(() => {
+    setSpeedText(speed < 1000 ? String(Math.round(speed)) : (speed / 1000).toFixed(1));
+  }, [speed]);
+
   return (
     <div className="presets-col">
       <div className="speed-container">
@@ -53,27 +62,37 @@ export function PresetsColumn({
             <input
               type="text"
               className="speed-input-text"
-              value={speed < 1000 ? Math.round(speed) : (speed / 1000).toFixed(1)}
+              value={speedText}
               onChange={(e) => {
                 const raw = e.target.value;
-                if (raw === '' || /^[0-9.]*$/.test(raw)) {
+                if (raw === "" || /^[0-9.]*$/.test(raw)) {
+                  setSpeedText(raw);
                   const val = parseFloat(raw);
-                  if (!isNaN(val)) {
-                    if (val >= 10) {
-                      setSpeed(Math.min(5000, val));
+                  if (!isNaN(val) && val > 0) {
+                    if (val >= 20) {
+                      setSpeed(Math.min(15000, Math.max(500, val)));
                     } else {
-                      setSpeed(Math.min(5, val) * 1000);
+                      setSpeed(Math.min(15000, Math.max(500, Math.round(val * 1000))));
                     }
                   }
                 }
               }}
               onBlur={() => {
-                if (speed < 500) setSpeed(500);
-                if (speed > 15000) setSpeed(15000);
+                const val = parseFloat(speedText);
+                let finalSpeed = speed;
+                if (isNaN(val) || val <= 0) {
+                  finalSpeed = 3000;
+                } else if (val >= 20) {
+                  finalSpeed = Math.min(15000, Math.max(500, val));
+                } else {
+                  finalSpeed = Math.min(15000, Math.max(500, Math.round(val * 1000)));
+                }
+                setSpeed(finalSpeed);
+                setSpeedText(finalSpeed < 1000 ? String(Math.round(finalSpeed)) : (finalSpeed / 1000).toFixed(1));
               }}
             />
             <span className="speed-value">
-              {speed < 1000 ? 'ms' : 's'}
+              {speed < 1000 ? "ms" : "s"}
             </span>
           </div>
         </div>

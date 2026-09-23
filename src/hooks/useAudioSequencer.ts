@@ -16,6 +16,7 @@ export function useAudioSequencer({
   const activeAudioRef = useRef<HTMLAudioElement | null>(null);
   const audioCacheRef = useRef<Map<string, HTMLAudioElement>>(new Map());
   const activeTimeoutRef = useRef<any>(null);
+  const currentMoveIndexRef = useRef<number>(0);
 
   // Clear any scheduled timeouts on unmount to prevent leaks
   useEffect(() => {
@@ -66,13 +67,14 @@ export function useAudioSequencer({
   }, []);
 
   const playComboAudio = useCallback(
-    (keys: number[], timeAllowedMs: number) => {
+    (keys: number[], timeAllowedMs: number, startIndex = 0) => {
       if (!useVoiceRef.current) return;
 
       stopAudio(); // Reset any currently running playback sequence
 
+      const remainingMoves = Math.max(1, keys.length - startIndex);
       // Ensure we aim to finish playing all moves in AT MOST a fraction of the speed allocation.
-      const maxTimePerMove = (timeAllowedMs * 0.7) / keys.length;
+      const maxTimePerMove = (timeAllowedMs * 0.7) / remainingMoves;
       // Calculate a playback rate that compresses the clips (e.g. 1.2x up to 3.0x speed)
       // Most voicegen tracks are ~0.8s long (800ms)
       const idealPlaybackRate = Math.max(1.2, Math.min(3.0, 800 / maxTimePerMove));
@@ -97,6 +99,7 @@ export function useAudioSequencer({
       });
 
       const playNext = (index: number) => {
+        currentMoveIndexRef.current = index;
         if (index >= audioQueue.length) return;
 
         // Retrieve preloaded audio instance directly from memory-cache
@@ -197,7 +200,7 @@ export function useAudioSequencer({
         audio.play().catch(() => playNext(index + 1));
       };
 
-      playNext(0);
+      playNext(startIndex);
     },
     [currentMoves, displayModeRef, customDisplayKeysRef, useVoiceRef, stopAudio]
   );
@@ -209,5 +212,5 @@ export function useAudioSequencer({
     } catch {}
   }, []);
 
-  return { playComboAudio, stopAudio, unlockAudio };
+  return { playComboAudio, stopAudio, unlockAudio, currentMoveIndexRef };
 }

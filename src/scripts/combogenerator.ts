@@ -97,6 +97,11 @@ export function generateCombo(opts: ComboOptions): number[] {
 
   const combo: number[] = [];
 
+  const isJab = (key: number) => {
+    const m = moves.find(move => move.key === key);
+    return m?.name.toUpperCase() === "JAB";
+  };
+
   for (let step = 0; step < targetLen; step++) {
     const last = combo.length > 0 ? combo[combo.length - 1]! : null;
 
@@ -113,9 +118,9 @@ export function generateCombo(opts: ComboOptions): number[] {
       const lastIsOdd = last % 2 === 1;
       const lastIsKick = isKick(moves, last);
 
-      if (last === 1) {
+      if (isJab(last)) {
         // Jab exception: can double-jab OR go rear (even)
-        candidates = allKeys.filter(k => k === 1 || k % 2 === 0);
+        candidates = allKeys.filter(k => isJab(k) || k % 2 === 0);
       } else if (lastIsKick) {
         // KICK: reversed parity same parity follows
         if (lastIsOdd) {
@@ -133,12 +138,13 @@ export function generateCombo(opts: ComboOptions): number[] {
       }
     }
 
+    if (candidates.length === 0) candidates = allKeys;
     if (candidates.length === 0) break;
 
-    // Count how many times '1' was rolled twice in a row so far
+    // Count how many times JAB was rolled twice in a row so far
     let doubleJabCount = 0;
     for (let i = 1; i < combo.length; i++) {
-      if (combo[i] === 1 && combo[i - 1] === 1) {
+      if (isJab(combo[i]!) && isJab(combo[i - 1]!)) {
         doubleJabCount++;
       }
     }
@@ -152,9 +158,9 @@ export function generateCombo(opts: ComboOptions): number[] {
         w *= 1.4;
       }
 
-      if (k === 1) {
-        // Add 1 to doubleJabCount if this candidate '1' would create another back-to-back '1'
-        const currentWouldBeDouble = last === 1 ? 1 : 0;
+      if (isJab(k)) {
+        // Add 1 to doubleJabCount if this candidate JAB would create another back-to-back JAB
+        const currentWouldBeDouble = last !== null && isJab(last) ? 1 : 0;
         const totalDoubles = doubleJabCount + currentWouldBeDouble;
         if (totalDoubles > 0) {
           w *= Math.pow(0.5, totalDoubles);

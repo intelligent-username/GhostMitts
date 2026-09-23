@@ -1,5 +1,6 @@
 /*  Toggle  */
 .toggle-container {
+  position: relative;
   display: flex;
   align-items: center;
   background-color: #1a1a1a;
@@ -9,25 +10,74 @@
   width: 100%;
   max-width: 280px;
   flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+.toggle-glider {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 4px;
+  width: calc(50% - 4px);
+  background-color: #ededed;
+  border-radius: 999px;
+  box-shadow: 0 2px 8px rgba(255, 255, 255, 0.12);
+  transition: transform 0.24s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.toggle-glider.time {
+  transform: translateX(0);
+}
+
+.toggle-glider.combos {
+  transform: translateX(100%);
 }
 
 .toggle-btn {
+  position: relative;
+  z-index: 2;
   flex: 1;
   padding: 0.6rem 1rem;
   border-radius: 999px;
   border: none;
   background: transparent;
-  color: #666;
+  color: #777;
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: color 0.2s ease;
+  user-select: none;
 }
 
 .toggle-btn.active {
-  background-color: #ededed;
   color: #121214;
-  box-shadow: 0 2px 8px rgba(255, 255, 255, 0.1);
+  background: transparent;
+  box-shadow: none;
+}
+
+.mode-settings-wrapper {
+  width: 100%;
+  min-height: 82px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.mode-panel-animate {
+  animation: modeFadeIn 0.22s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes modeFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 /*  Controls (Inputs & Buttons) */

@@ -45,14 +45,19 @@ export function ControlsColumn({
 }: ControlsColumnProps) {
   return (
     <div className="controls-col">
-      <div className="toggle-container">
+      <div className="toggle-container" role="tablist">
+        <div className={`toggle-glider ${mode}`} aria-hidden="true" />
         <button
+          role="tab"
+          aria-selected={mode === "time"}
           className={`toggle-btn ${mode === "time" ? "active" : ""}`}
           onClick={() => setMode("time")}
         >
           Time
         </button>
         <button
+          role="tab"
+          aria-selected={mode === "combos"}
           className={`toggle-btn ${mode === "combos" ? "active" : ""}`}
           onClick={() => setMode("combos")}
         >
@@ -61,42 +66,44 @@ export function ControlsColumn({
       </div>
 
       <div className="controls">
-        {mode === "time" ? (
-          <div className="time-inputs">
-            <div className="input-group">
-              <span className="input-label">Min</span>
+        <div className="mode-settings-wrapper" key={mode}>
+          {mode === "time" ? (
+            <div className="time-inputs mode-panel-animate">
+              <div className="input-group">
+                <span className="input-label">Min</span>
+                <input
+                  type="number"
+                  className="styled-input"
+                  value={timeInputMin}
+                  onChange={e => setTimeInputMin(e.target.value)}
+                  min="0"
+                />
+              </div>
+              <div className="input-group">
+                <span className="input-label">Sec</span>
+                <input
+                  type="number"
+                  className="styled-input"
+                  value={timeInputSec}
+                  onChange={e => setTimeInputSec(e.target.value)}
+                  min="0"
+                  max="59"
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="input-group mode-panel-animate">
+              <span className="input-label">How Many?</span>
               <input
                 type="number"
                 className="styled-input"
-                value={timeInputMin}
-                onChange={e => setTimeInputMin(e.target.value)}
-                min="0"
+                value={comboInput}
+                onChange={e => setComboInput(e.target.value)}
+                min="1"
               />
             </div>
-            <div className="input-group">
-              <span className="input-label">Sec</span>
-              <input
-                type="number"
-                className="styled-input"
-                value={timeInputSec}
-                onChange={e => setTimeInputSec(e.target.value)}
-                min="0"
-                max="59"
-              />
-            </div>
-          </div>
-        ) : (
-          <div className="input-group">
-            <span className="input-label">How Many?</span>
-            <input
-              type="number"
-              className="styled-input"
-              value={comboInput}
-              onChange={e => setComboInput(e.target.value)}
-              min="1"
-            />
-          </div>
-        )}
+          )}
+        </div>
 
         <div className="button-group">
           {!isSessionActive && (

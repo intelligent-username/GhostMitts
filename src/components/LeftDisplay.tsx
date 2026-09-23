@@ -12,6 +12,7 @@ interface LeftDisplayProps {
   currentCombo: string;
   isMobile?: boolean;
   countdown: number | null;
+  onClick?: () => void;
 }
 
 export function LeftDisplay({
@@ -26,6 +27,7 @@ export function LeftDisplay({
   currentCombo,
   isMobile = false,
   countdown,
+  onClick,
 }: LeftDisplayProps) {
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
@@ -89,14 +91,14 @@ export function LeftDisplay({
 
   if (isMobile) {
     return (
-      <div className="left-tab mobile-display-tab">
+      <div className="left-tab mobile-display-tab" onClick={onClick}>
         {renderContent()}
       </div>
     );
   }
 
   return (
-    <div className="left-tab">
+    <div className="left-tab" onClick={onClick}>
       {renderContent()}
  
       {/* Bottom bar container for title and totals */}
