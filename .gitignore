@@ -1,3 +1,7 @@
+# Temporary files
+notes/
+*temp/
+
 # dependencies (from bun install)
 node_modules
 

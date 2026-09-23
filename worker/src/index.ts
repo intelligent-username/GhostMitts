@@ -432,19 +432,6 @@ export default {
         ]
       );
 
-      // 2) Accumulate daily totals (used for on-demand streak calculation)
-      const sessionId = crypto.randomUUID();
-      await dbRun(
-        env,
-        `INSERT INTO sessions (session_id, username, date, num_combos, time_seconds)
-         VALUES (?, ?, ?, ?, ?)
-         ON CONFLICT(username, date) DO UPDATE SET
-         num_combos = sessions.num_combos + excluded.num_combos,
-         time_seconds = sessions.time_seconds + excluded.time_seconds,
-         updated_at = CURRENT_TIMESTAMP`,
-        [sessionId, auth.username, date, combosCompleted, durationSeconds]
-      );
-
       return json({ success: true, workout_id: workoutId }, 200, corsHeaders(allowedOrigin, request));
     }
 

@@ -70,7 +70,7 @@ export function MobileLayout({
       </div>
 
       <div className="mobile-display-tab" onClick={leftDisplayProps.onClick}>
-        <LeftDisplay {...leftDisplayProps} />
+        <LeftDisplay {...leftDisplayProps} isMobile={true} />
       </div>
 
       <ControlsColumn {...controlsProps} />

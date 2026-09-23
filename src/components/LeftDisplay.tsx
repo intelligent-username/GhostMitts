@@ -61,7 +61,7 @@ export function LeftDisplay({
         <div className="display-wrapper">
           <div className="time-display">{formatTime(timeLeft)}</div>
           {currentCombo && (
-            <div className="current-combo" aria-live="polite">{currentCombo}</div>
+            <div key={currentCombo} className="current-combo" aria-live="polite">{currentCombo}</div>
           )}
         </div>
       );
@@ -83,7 +83,7 @@ export function LeftDisplay({
           </div>
         </div>
         {currentCombo && (
-          <div className="current-combo" aria-live="polite">{currentCombo}</div>
+          <div key={currentCombo} className="current-combo" aria-live="polite">{currentCombo}</div>
         )}
       </div>
     );

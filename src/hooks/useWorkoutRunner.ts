@@ -45,6 +45,14 @@ export function useWorkoutRunner({
 
   const sessionStartMsRef = useRef<number | null>(null);
   const sessionCombosCountRef = useRef<number>(0);
+  const modeRef = useRef<"time" | "combos">(mode);
+  useEffect(() => { modeRef.current = mode; }, [mode]);
+
+  const speedRef = useRef<number>(speed);
+  useEffect(() => { speedRef.current = speed; }, [speed]);
+
+  const totalCombosRef = useRef<number>(totalCombos);
+  useEffect(() => { totalCombosRef.current = totalCombos; }, [totalCombos]);
 
   const currentComboKeysRef = useRef<number[] | null>(null);
   const comboTimeRemainingRef = useRef<number>(0);
@@ -86,6 +94,15 @@ export function useWorkoutRunner({
         drumsAudioRef.current.currentTime = 0;
         drumsAudioRef.current.play().catch(() => {});
       }
+    } catch {}
+  }, []);
+
+  const playNumberSound = useCallback((num: number) => {
+    if (!useVoiceRef.current) return;
+    try {
+      const audio = new Audio(`/voicegen/en-US-GuyNeural/n0${num}_${num === 3 ? "THREE" : num === 2 ? "TWO" : "ONE"}.ogg`);
+      audio.playbackRate = 1.1;
+      audio.play().catch(() => {});
     } catch {}
   }, []);
 
@@ -143,7 +160,11 @@ export function useWorkoutRunner({
     return extra;
   }, [currentMoves]);
 
+  const timeLeftRef = useRef<number>(0);
+  const isCountingDownRef = useRef<boolean>(false);
+
   const stopAllRuns = useCallback(() => {
+    isCountingDownRef.current = false;
     if (timeoutIdRef.current !== null) {
       window.clearTimeout(timeoutIdRef.current);
       timeoutIdRef.current = null;
@@ -157,11 +178,15 @@ export function useWorkoutRunner({
       countdownTimerRef.current = null;
     }
 
-    // Save remaining combo duration for resume
     if (comboStartedAtRef.current > 0) {
       const elapsed = Date.now() - comboStartedAtRef.current;
       comboTimeRemainingRef.current = Math.max(0, comboTimeRemainingRef.current - elapsed);
       comboStartedAtRef.current = 0;
+    }
+
+    if (drumsAudioRef.current) {
+      drumsAudioRef.current.pause();
+      drumsAudioRef.current.currentTime = 0;
     }
 
     setIsTimerRunning(false);
@@ -180,24 +205,21 @@ export function useWorkoutRunner({
     }
   }, [stopAudio, onWorkoutFinish]);
 
+  const scheduleNextComboRef = useRef<(isFirst?: boolean) => void>(() => {});
+
   const scheduleNextCombo = useCallback((isFirst = false) => {
-    const isCombos = mode === "combos";
-    const targetCombos = totalCombos;
+    const isCombos = modeRef.current === "combos";
+    const targetCombos = totalCombosRef.current;
 
     if (!isFirst) {
       sessionCombosCountRef.current += 1;
-      setCombosCompleted(prev => {
-        const next = prev + 1;
-        if (isCombos && targetCombos > 0 && next >= targetCombos) {
-          stopAllRuns();
-          playBell();
-          setCurrentCombo("WORKOUT COMPLETE!");
-          return next;
-        }
-        return next;
-      });
+      const countNow = sessionCombosCountRef.current;
+      setCombosCompleted(countNow);
 
-      if (isCombos && targetCombos > 0 && sessionCombosCountRef.current >= targetCombos) {
+      if (isCombos && targetCombos > 0 && countNow >= targetCombos) {
+        stopAllRuns();
+        playBell();
+        setCurrentCombo("WORKOUT COMPLETE!");
         return;
       }
     }
@@ -206,7 +228,7 @@ export function useWorkoutRunner({
     if (!keys || keys.length === 0) return;
 
     const extraDelay = getExtraComboDelay(keys);
-    const delay = speed + extraDelay;
+    const delay = speedRef.current + extraDelay;
 
     currentComboKeysRef.current = keys;
     comboTimeRemainingRef.current = delay;
@@ -217,15 +239,19 @@ export function useWorkoutRunner({
     playComboAudio(keys, delay, 0);
 
     timeoutIdRef.current = window.setTimeout(() => {
-      scheduleNextCombo(false);
+      scheduleNextComboRef.current(false);
     }, delay);
-  }, [mode, totalCombos, getCombo, getExtraComboDelay, speed, comboToString, stopAudio, playComboAudio, stopAllRuns, playBell]);
+  }, [getCombo, getExtraComboDelay, comboToString, stopAudio, playComboAudio, stopAllRuns, playBell]);
+
+  useEffect(() => {
+    scheduleNextComboRef.current = scheduleNextCombo;
+  }, [scheduleNextCombo]);
 
   const resumeCurrentCombo = useCallback(() => {
     const keys = currentComboKeysRef.current;
     const remainingTime = comboTimeRemainingRef.current;
     if (!keys || remainingTime <= 0) {
-      scheduleNextCombo(false);
+      scheduleNextComboRef.current(false);
       return;
     }
 
@@ -237,28 +263,29 @@ export function useWorkoutRunner({
     playComboAudio(keys, remainingTime, resumeIndex);
 
     timeoutIdRef.current = window.setTimeout(() => {
-      scheduleNextCombo(false);
+      scheduleNextComboRef.current(false);
     }, remainingTime);
-  }, [comboToString, stopAudio, playComboAudio, currentMoveIndexRef, scheduleNextCombo]);
+  }, [comboToString, stopAudio, playComboAudio, currentMoveIndexRef]);
 
   const tickTimer = useCallback(() => {
-    setTimeLeft(prev => {
-      if (prev <= 1) {
-        stopAllRuns();
-        playBell();
-        setCurrentCombo("WORKOUT COMPLETE!");
-        return 0;
-      }
-      timerTimeoutRef.current = window.setTimeout(tickTimer, 1000);
-      return prev - 1;
-    });
+    timeLeftRef.current -= 1;
+    const current = timeLeftRef.current;
+    setTimeLeft(Math.max(0, current));
+
+    if (current <= 0) {
+      stopAllRuns();
+      playBell();
+      setCurrentCombo("WORKOUT COMPLETE!");
+      return;
+    }
+
+    timerTimeoutRef.current = window.setTimeout(tickTimer, 1000);
   }, [stopAllRuns, playBell]);
 
   const startTimerWorkout = useCallback(() => {
-    if (isTimerRunning) return;
+    if (isTimerRunning || isCountingDownRef.current) return;
 
-    // Resuming paused timer
-    if (timeLeft > 0 && currentComboKeysRef.current && comboTimeRemainingRef.current > 0) {
+    if (timeLeftRef.current > 0 && currentComboKeysRef.current && comboTimeRemainingRef.current > 0) {
       setIsTimerRunning(true);
       sessionStartMsRef.current = Date.now();
       resumeCurrentCombo();
@@ -272,36 +299,41 @@ export function useWorkoutRunner({
     const totalSecs = mins * 60 + secs;
     if (totalSecs <= 0) return;
 
+    timeLeftRef.current = totalSecs;
     setTimeLeft(totalSecs);
     setCombosCompleted(0);
     setCountdown(3);
+    isCountingDownRef.current = true;
     playDrums();
+    playNumberSound(3);
 
     let count = 3;
     const runCountdown = () => {
+      if (!isCountingDownRef.current) return;
       count -= 1;
       if (count > 0) {
         setCountdown(count);
+        playNumberSound(count);
         countdownTimerRef.current = window.setTimeout(runCountdown, 1000);
       } else {
+        isCountingDownRef.current = false;
         setCountdown(null);
         playBell();
         setIsTimerRunning(true);
         sessionStartMsRef.current = Date.now();
         sessionCombosCountRef.current = 0;
 
-        scheduleNextCombo(true);
+        scheduleNextComboRef.current(true);
         timerTimeoutRef.current = window.setTimeout(tickTimer, 1000);
       }
     };
     countdownTimerRef.current = window.setTimeout(runCountdown, 1000);
-  }, [isTimerRunning, timeLeft, resumeCurrentCombo, tickTimer, stopAllRuns, timeInputMin, timeInputSec, playDrums, playBell, scheduleNextCombo]);
+  }, [isTimerRunning, resumeCurrentCombo, tickTimer, stopAllRuns, timeInputMin, timeInputSec, playDrums, playNumberSound, playBell]);
 
   const startCombosWorkout = useCallback(() => {
-    if (isCombosActive) return;
+    if (isCombosActive || isCountingDownRef.current) return;
 
-    // Resuming paused combo workout
-    if (totalCombos > 0 && combosCompleted < totalCombos && currentComboKeysRef.current && comboTimeRemainingRef.current > 0) {
+    if (totalCombosRef.current > 0 && combosCompleted < totalCombosRef.current && currentComboKeysRef.current && comboTimeRemainingRef.current > 0) {
       setIsCombosActive(true);
       sessionStartMsRef.current = Date.now();
       resumeCurrentCombo();
@@ -311,28 +343,34 @@ export function useWorkoutRunner({
     stopAllRuns();
     const countTarget = parseInt(comboInput, 10) || 10;
     setTotalCombos(countTarget);
+    totalCombosRef.current = countTarget;
     setCombosCompleted(0);
     setCountdown(3);
+    isCountingDownRef.current = true;
     playDrums();
+    playNumberSound(3);
 
     let count = 3;
     const runCountdown = () => {
+      if (!isCountingDownRef.current) return;
       count -= 1;
       if (count > 0) {
         setCountdown(count);
+        playNumberSound(count);
         countdownTimerRef.current = window.setTimeout(runCountdown, 1000);
       } else {
+        isCountingDownRef.current = false;
         setCountdown(null);
         playBell();
         setIsCombosActive(true);
         sessionStartMsRef.current = Date.now();
         sessionCombosCountRef.current = 0;
 
-        scheduleNextCombo(true);
+        scheduleNextComboRef.current(true);
       }
     };
     countdownTimerRef.current = window.setTimeout(runCountdown, 1000);
-  }, [isCombosActive, totalCombos, combosCompleted, resumeCurrentCombo, stopAllRuns, comboInput, playDrums, playBell, scheduleNextCombo]);
+  }, [isCombosActive, combosCompleted, resumeCurrentCombo, stopAllRuns, comboInput, playDrums, playNumberSound, playBell]);
 
   return {
     mode,
