@@ -21,10 +21,9 @@ This audit reviews GhostMitts across its React frontend, Cloudflare Worker backe
   `endWorkoutSegment` exits immediately if `uname` is empty. However, the local state updates (`setTotalPracticeCombos`, `setTotalPracticeSeconds`), the streak calculations, and local storage synchronization are located *after* this line (lines 286–315). Consequently, guest users (anyone using the app without an account) have 0 seconds and 0 combos recorded upon completing or pausing workouts.
 - **Fix**: Move the `uname` check down to only guard cloud API calls (`triggerCloudSessionSave` and `insertWorkout`).
 
-### 2.3 Broken Production Startup Script (`npm run start`)
-- **Location**: [package.json](file:///c:/Users/varak/Documents/CODE/Projects/Easy%20Projects/GhostMitts/package.json#L11), [src/index.ts](file:///c:/Users/varak/Documents/CODE/Projects/Easy%20Projects/GhostMitts/src/index.ts#L54)
-- **Problem**: `package.json` specifies `"start": "NODE_ENV=production bun src/index.ts"`. In `src/index.ts`, requests to `"/*"` serve `src/index.html`, which points directly to `./scripts/frontend.tsx`. Standard browsers in production cannot compile JSX or TypeScript. Production needs to serve the compiled bundle from `dist/` created by `vite build`.
-- **Fix**: Update `src/index.ts` to serve from `dist/` or adjust the `start` script to `vite preview` / a static file server for `dist/`.
+### 2.3 [RESOLVED] Broken Production Startup Script (`npm run start`)
+- **Location**: [package.json](file:///c:/Users/varak/Documents/CODE/Projects/Easy%20Projects/GhostMitts/package.json#L11), [src/index.ts](file:///c:/Users/varak/Documents/CODE/Projects/Easy%20Projects/GhostMitts/src/index.ts)
+- **Status**: Fixed in `src/index.ts` to serve compiled assets, audio files, and SPA fallback HTML from `dist/` with warning fallback if the build has not been generated.
 
 ---
 
@@ -121,20 +120,13 @@ This audit reviews GhostMitts across its React frontend, Cloudflare Worker backe
 
 ## 6. Production Readiness & Configuration
 
-### 6.1 OpenGraph / Twitter Meta Tags Use Relative Paths
-- **Location**: [index.html](file:///c:/Users/varak/Documents/CODE/Projects/Easy%20Projects/GhostMitts/src/index.html#L11-L15)
-- **Problem**:
-  ```html
-  <meta property="og:image" content="./assets/logo.svg" />
-  <link rel="icon" type="image/svg+xml" href="./assets/logo.svg" />
-  ```
-  Social platforms (Facebook, Twitter/X, Discord, Slack) require absolute canonical URLs for `og:image`. Relative paths fail to render link previews.
-- **Fix**: Use absolute URL or configure build-time base injection.
+### 6.1 [RESOLVED] OpenGraph / Twitter Meta Tags Use Relative Paths
+- **Location**: [index.html](file:///c:/Users/varak/Documents/CODE/Projects/Easy%20Projects/GhostMitts/src/index.html)
+- **Status**: Fixed by adding absolute canonical URLs for `og:url`, `og:image`, `twitter:image`, canonical link tag, and copying `logo.svg` to public root (`/logo.svg`).
 
-### 6.2 Cloudflare Worker CORS Handling
-- **Location**: [worker/src/index.ts](file:///c:/Users/varak/Documents/CODE/Projects/Easy%20Projects/GhostMitts/worker/src/index.ts#L12-L15), [worker/src/index.ts](file:///c:/Users/varak/Documents/CODE/Projects/Easy%20Projects/GhostMitts/worker/src/index.ts#L231-L237)
-- **Problem**: Worker strictly requires `ALLOWED_ORIGINS` to match the `Origin` header. In local development or testing with curl / health checks without an `Origin` header, requests return `403 Forbidden` rather than allowing health probes or same-origin requests.
-- **Fix**: Allow `/health` unconditionally without origin check.
+### 6.2 [RESOLVED] Cloudflare Worker CORS Handling
+- **Location**: [worker/src/index.ts](file:///c:/Users/varak/Documents/CODE/Projects/Easy%20Projects/GhostMitts/worker/src/index.ts#L222-L245)
+- **Status**: Fixed by handling `GET`, `HEAD`, and `OPTIONS` for `/health` with CORS headers prior to strict origin checks so curl, browsers, and uptime monitors are never blocked with 403.
 
 ### 6.3 README & Documentation Outdated
 - **Location**: [README.md](file:///c:/Users/varak/Documents/CODE/Projects/Easy%20Projects/GhostMitts/README.md)

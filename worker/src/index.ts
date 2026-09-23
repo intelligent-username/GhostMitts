@@ -217,14 +217,30 @@ export default {
     const allowedOrigin = getAllowedOrigin(request, env);
 
     // Health check: helps verify deployments quickly.
-    // - Works with curl (no Origin header)
-    // - Includes CORS headers only when Origin is allowed
-    if (url.pathname === "/health" && method === "GET") {
-      return json(
-        { ok: true, time: new Date().toISOString() },
-        200,
-        allowedOrigin ? corsHeaders(allowedOrigin, request) : undefined
-      );
+    // - Works with curl, uptime monitors, and browsers
+    // - Allows GET, HEAD, OPTIONS unconditionally without 403
+    if (url.pathname === "/health") {
+      if (method === "OPTIONS") {
+        return new Response(null, {
+          status: 204,
+          headers: allowedOrigin
+            ? corsHeaders(allowedOrigin, request)
+            : {
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "GET,HEAD,OPTIONS",
+                "Access-Control-Allow-Headers": "*",
+              },
+        });
+      }
+      if (method === "GET" || method === "HEAD") {
+        return json(
+          { ok: true, time: new Date().toISOString() },
+          200,
+          allowedOrigin
+            ? corsHeaders(allowedOrigin, request)
+            : { "Access-Control-Allow-Origin": "*" }
+        );
+      }
     }
 
     if (method === "OPTIONS") {
