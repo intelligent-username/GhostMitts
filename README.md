@@ -52,82 +52,101 @@ npm install
 copy worker\.dev.vars.example worker\.dev.vars
 ```
 
-#### Running with a Local SQLite/LibSQL File (No Turso Required)
+### Database Setup (Turso / LibSQL)
 
-If you don't want to set up a remote Turso database for local development, you can run the API against a local SQLite file using LibSQL's embedded database feature.
+GhostMitts uses [Turso](https://turso.tech/) (built on LibSQL) to persist user accounts, practice streaks, custom preset configurations, and workout history.
 
-1. Open `worker/.dev.vars` and configure the following variables:
-   
-   ```env
-   # Tell the worker to write/read to a local SQLite database file
-   TURSO_DATABASE_URL=file:local.db
-   # Set a placeholder token (non-empty string required by index.ts)
-   TURSO_AUTH_TOKEN=local
-   # Set a mock session secret
-   SESSION_SECRET=local-session-secret-key-12345
+#### Option A: Remote Turso Cloud Database (Recommended for Production & Cloud Dev)
+
+1. **Install Turso CLI & Log In**:
+   ```bash
+   # macOS / Linux / WSL
+   curl -sSfL https://get.tur.so/install.sh | bash
+   turso auth login
    ```
 
-2. Initialize the local database schema from `worker/schema.sql`:
+2. **Create Database**:
+   ```bash
+   turso db create ghostmitts-db
+   ```
 
-   * **Using sqlite3 (macOS/Linux/Git Bash)**:
+3. **Retrieve Database URL & Auth Token**:
+   ```bash
+   # Get Database URL (e.g. libsql://ghostmitts-db-username.turso.io)
+   turso db show ghostmitts-db --url
+
+   # Generate Auth Token
+   turso db tokens create ghostmitts-db
+   ```
+
+4. **Apply Schema**:
+   Apply `worker/schema.sql` to provision the required tables (`users`, `sessions`, `presets`, `workouts`):
+   ```bash
+   # Using Turso CLI (cross-platform)
+   turso db shell ghostmitts-db < worker/schema.sql
+
+   # Windows PowerShell alternative
+   Get-Content worker/schema.sql | turso db shell ghostmitts-db
+   ```
+
+5. **Configure Worker Environment**:
+   - **For local dev (`worker/.dev.vars`)**:
+     ```env
+     TURSO_DATABASE_URL=libsql://ghostmitts-db-username.turso.io
+     TURSO_AUTH_TOKEN=your_generated_turso_auth_token
+     SESSION_SECRET=your-secure-random-secret
+     ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173
+     ```
+   - **For production deployment (Wrangler Secrets)**:
+     ```bash
+     npx wrangler secret put TURSO_DATABASE_URL --config worker/wrangler.toml
+     npx wrangler secret put TURSO_AUTH_TOKEN --config worker/wrangler.toml
+     npx wrangler secret put SESSION_SECRET --config worker/wrangler.toml
+     ```
+
+#### Option B: Embedded Local SQLite File (Offline Local Dev)
+
+If developing without a remote Turso database:
+
+1. Configure `worker/.dev.vars`:
+   ```env
+   TURSO_DATABASE_URL=file:local.db
+   TURSO_AUTH_TOKEN=local
+   SESSION_SECRET=local-session-secret-key-12345
+   ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173
+   ```
+
+2. Initialize `local.db` from `worker/schema.sql`:
+   - **macOS / Linux / Git Bash**:
      ```bash
      sqlite3 local.db < worker/schema.sql
      ```
-   * **Using PowerShell (Windows)**:
+   - **Windows PowerShell**:
      ```powershell
      Get-Content worker/schema.sql | sqlite3 local.db
      ```
-   
-   *(Note: The `local.db` file will be created in your project root.)*
 
-3. Run the Worker locally:
+3. Start the worker dev server:
+   ```bash
+   npm run api:dev
+   ```
 
-```bash
-npm run api:dev
-```
+### Deploying the Cloudflare Worker API
 
-By default Wrangler serves at `http://127.0.0.1:8787`.
-Point your frontend at it by setting `BUN_PUBLIC_API_BASE=http://127.0.0.1:8787` in your local env.
+1. Login to Cloudflare:
+   ```bash
+   npx wrangler login
+   ```
 
-### Deploy
+2. Deploy:
+   ```bash
+   npm run api:deploy
+   ```
 
-Login once:
-
-```bash
-npx wrangler login
-```
-
-Set secrets (do NOT commit them to git):
-
-```bash
-npx wrangler secret put TURSO_DATABASE_URL --config worker/wrangler.toml
-npx wrangler secret put TURSO_AUTH_TOKEN --config worker/wrangler.toml
-npx wrangler secret put SESSION_SECRET --config worker/wrangler.toml
-```
-
-Deploy:
-
-```bash
-npm run api:deploy
-```
-
-### Apply DB schema (Turso)
-
-You need to apply the schema in [worker/schema.sql](worker/schema.sql) to your Turso database once.
-
-On Windows (example):
-
-```bash
-type worker\schema.sql | turso db shell YOUR_DB_NAME
-```
-
-### Verify the update
-
-After deploy, Wrangler prints a `*.workers.dev` URL. Verify it responds:
-
-```bash
-curl https://YOUR_WORKER_SUBDOMAIN.workers.dev/health
-```
+3. Verify deployment:
+   ```bash
+   curl https://YOUR_WORKER_SUBDOMAIN.workers.dev/health
+   ```
 
 #### If the Vercel frontend says "Accounts Offline"
 

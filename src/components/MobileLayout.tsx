@@ -76,7 +76,7 @@ export function MobileLayout({
       <ControlsColumn {...controlsProps} />
 
       <div className="mobile-totals-footer">
-        {formatMinutes(totalPracticeSeconds)} · {totalPracticeCombos} combos total
+        {formatMinutes(totalPracticeSeconds)} min · {totalPracticeCombos} combos total
       </div>
 
       {showSettings && (
