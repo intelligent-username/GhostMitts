@@ -2,10 +2,6 @@ import { serve } from "bun";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-function jsString(value: string) {
-  return JSON.stringify(String(value ?? ""));
-}
-
 function loadEnvFile(filePath: string) {
   if (!existsSync(filePath)) return;
   const raw = readFileSync(filePath, "utf8");
@@ -44,16 +40,6 @@ const server = serve({
     const url = new URL(req.url);
     const pathname = decodeURIComponent(url.pathname);
 
-    // Runtime config injection if requested
-    if (pathname === "/__config.js") {
-      const apiBase = process.env.BUN_PUBLIC_API_BASE || process.env.VITE_API_BASE || "";
-      return new Response(`globalThis.BUN_PUBLIC_API_BASE = ${jsString(apiBase)};\n`, {
-        headers: {
-          "Content-Type": "application/javascript; charset=utf-8",
-          "Cache-Control": "no-store",
-        },
-      });
-    }
 
     // Static file serving: check distDir first, then src/public
     const safePath = pathname.replace(/\.\./g, "").replace(/^\/+/, "");
