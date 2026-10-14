@@ -2,7 +2,7 @@
 
 <img src="src/assets/logo.svg" alt="Logo" width="200" height="200">
 
-Your personal coach telling you what combinations to throw, anywhere, anytime.
+Your personal coach telling you what combinations to throw, anywhere you are.
 
 ## Features
 
